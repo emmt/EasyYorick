@@ -1,0 +1,17 @@
+# Specific files/directories
+temp/
+work/
+
+# Backup files
+*~
+
+# Automatically generated files:
+doc/*.aux
+doc/*.bbl
+doc/*.blg
+doc/*.brf
+doc/*.log
+doc/*.out
+doc/*.pdf
+doc/*.synctex.gz
+test/*.out
