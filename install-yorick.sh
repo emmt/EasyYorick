@@ -29,6 +29,14 @@ WANT_YETI=yes
 # Do you want MiRA (this requires Yeti)?
 WANT_MIRA=yes
 
+# Do you want to preserve pre-existing Yorick installation?
+# If set to "yes", the installation will overwrite existing
+# files but preserve other installed files (in particular
+# the files installed by Yorick extensions).  Otherwise, a
+# fresh re-installation will be performed and the contents of
+# "$PREFIX/libexec/yorick" erased prior to installation.
+PRESERVE_OTHER_INSTALLED_FILES=yes
+
 # URLs of code repositories.
 YORICK_GIT="https://github.com/dhmunro/yorick.git"
 YETI_GIT="https://github.com/emmt/Yeti.git"
@@ -90,7 +98,14 @@ cp -p emacs/README emacs/*.el relocate/emacs/.
 emacs --batch relocate/emacs/yorick.el -f emacs-lisp-byte-compile
 mkdir -p "$LIBEXECDIR"
 rm -f "$LIBEXECDIR/yorick"
-mv relocate "$LIBEXECDIR/yorick"
+if test "$PRESERVE_OTHER_INSTALLED_FILES" = "yes"
+then
+    mkdir -p "$LIBEXECDIR/yorick"
+    tar cf - relocate | tar -C "$LIBEXECDIR/yorick/" -xf -
+else
+    rm -rf "$LIBEXECDIR/yorick"
+    mv relocate "$LIBEXECDIR/yorick"
+fi
 if test -L "$BINDIR/yorick" -o ! -e "$BINDIR/yorick"
 then
     rm -f "$BINDIR/yorick"
