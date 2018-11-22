@@ -1,6 +1,6 @@
 #! /bin/sh
 #
-# install-yorick.sh --
+# ypkg.sh --
 #
 # Script to automatically download sources, compile and install Yorick and some
 # extensions (among others MiRA https://github.com/emmt/MiRA).
@@ -13,6 +13,13 @@
 #                 sudo apt-get install libfftw3-dev libnfft3-dev
 #
 
+# Avoid localized messages.
+export LANG="C"
+export LC_NUMERIC="C"
+
+# Exit immediately in case of untested errors.
+set -o errexit
+
 # Where to install everything (can be moved later, the sources --see below --
 # can be elsewhere).
 PREFIX=$HOME/easy-yorick
@@ -23,12 +30,6 @@ SRCDIR=$PREFIX/src
 # Do you have texi2html?
 HAVE_TEXI2HTML=no
 
-# Do you want Yeti?
-WANT_YETI=yes
-
-# Do you want MiRA (this requires Yeti)?
-WANT_MIRA=yes
-
 # Do you want to preserve pre-existing Yorick installation?
 # If set to "yes", the installation will overwrite existing
 # files but preserve other installed files (in particular
@@ -37,152 +38,800 @@ WANT_MIRA=yes
 # "$PREFIX/libexec/yorick" erased prior to installation.
 PRESERVE_OTHER_INSTALLED_FILES=yes
 
-# URLs of code repositories.
-YORICK_GIT="https://github.com/dhmunro/yorick.git"
-YETI_GIT="https://github.com/emmt/Yeti.git"
-OPTIMPACKLEGACY_GIT="https://github.com/emmt/OptimPackLegacy.git"
-YNFFT_GIT="https://github.com/emmt/ynfft.git"
-MIRA_GIT="https://github.com/emmt/MiRA.git"
+# This global variable stores the list of available packages.
+PACKAGES=""
 
 # In principle, the following does not need changes.  But you can
 # have a look to see what will happen if you run this script.
-
 LIBDIR="$PREFIX/lib"
 LIBEXECDIR="$PREFIX/libexec"
 BINDIR="$PREFIX/bin"
 SHAREDIR="$PREFIX/share"
 MANDIR="$SHAREDIR/man"
 YORICK_EXE="$LIBEXECDIR/yorick/bin/yorick"
+MANIFEST="$SRCDIR/MANIFEST"
 
-mkdir -p "$PREFIX"
-mkdir -p "$SRCDIR"
-
-#______________________________________________________________________
-#
-# Build and install Yorick.
-#
-if ! test -d "$SRCDIR/yorick"
-then
-    cd "$SRCDIR" yorick
-    git clone "$YORICK_GIT"
-fi
-cd "$SRCDIR/yorick"
-git pull
 export CC=gcc
 export CFLAGS='-pipe -Wall -O2 -fomit-frame-pointer'
-make Y_HOME=relocate ysite "CFLAGS=$CFLAGS" "CC=$CC"
-make config "CFLAGS=$CFLAGS" "CC=$CC"
-make clean
-make -j4
-make install
-cp -p install.rel relocate/README
-cp -p play/libplay.* relocate/lib/.
-cp -p gist/libgist.* relocate/lib/.
-chmod 644 relocate/include/*.h
-mkdir -p relocate/contrib
-mv relocate/doc/README relocate/doc/CONTENTS
-cp -p LICENSE.md ONEWS README.md TODO VERSION relocate/doc/.
-cp -p gist/README relocate/doc/README.gist
-cp -p play/README relocate/doc/README.play
-if test "$HAVE_TEXI2HTML" = "yes"
-then
-    cd doc/html
-    make
-    cd ../..
-    tar cf - doc/html doc/refs-html | tar xf - -C relocate
-fi
-find relocate -type d -exec chmod 755 {} \;
-find relocate -type f -exec chmod ugo+r {} \;
-mkdir -p relocate/emacs
-cp -p emacs/README emacs/*.el relocate/emacs/.
-emacs --batch relocate/emacs/yorick.el -f emacs-lisp-byte-compile
-mkdir -p "$LIBEXECDIR"
-rm -f "$LIBEXECDIR/yorick"
-if test "$PRESERVE_OTHER_INSTALLED_FILES" = "yes"
-then
-    mkdir -p "$LIBEXECDIR/yorick"
-    tar cf - relocate | tar -C "$LIBEXECDIR/yorick/" -xf -
-else
-    rm -rf "$LIBEXECDIR/yorick"
-    mv relocate "$LIBEXECDIR/yorick"
-fi
-if test -L "$BINDIR/yorick" -o ! -e "$BINDIR/yorick"
-then
-    rm -f "$BINDIR/yorick"
-    ln -s "$LIBEXECDIR/yorick/bin/yorick" "$BINDIR/yorick"
-fi
 
-#______________________________________________________________________
+die() {
+    echo >&2 "$*"
+    exit 1
+}
+
+warn() {
+    echo >&2 "WARNING: $*"
+    exit 1
+}
+
+test -e "$PREFIX" || mkdir -p "$PREFIX"
+test -d "$PREFIX" -a -r "$PREFIX" -a -w "$PREFIX" || \
+    die "Not a regular readable and writable directory \"$PREFIX\""
+
+test -e "$SRCDIR" || mkdir -p "$SRCDIR"
+test -d "$SRCDIR" -a -r "$SRCDIR" -a -w "$SRCDIR" || \
+    die "Not a regular readable and writable directory \"$SRCDIR\""
+
+test -e "$MANIFEST" || touch "$MANIFEST"
+test -f "$MANIFEST" -a -r "$MANIFEST" -a -w "$MANIFEST" || \
+    die "Not a regular readable and writable file \"$MANIFEST\""
+
+# Yields argument(s) converted to lowercase letters and dashes replaced by
+# underscores.
+ypkg_lowercase() {
+    echo "$*" | tr 'ABCDEFGHIJKLMNOPQRSTUVWXYZ-' 'abcdefghijklmnopqrstuvwxyz_'
+}
+
+# Yields argument(s) converted to uppercase letters and dashes replaced by
+# underscores.
+ypkg_uppercase() {
+    echo "$*" | tr 'abcdefghijklmnopqrstuvwxyz-' 'ABCDEFGHIJKLMNOPQRSTUVWXYZ_'
+}
+
+# Define a new available package.
+ypkg_define() {
+    local pkg url
+    test $# -eq 2 || die "ypkg_define: expecting exactly 2 argments"
+    pkg="$1"
+    url="$2"
+    eval `ypkg_uppercase "$pkg"`_GIT=\$url
+    PACKAGES="$PACKAGES $pkg"
+}
+
+# Assert that a package is available.
+ypkg_assert_available() {
+    local pkg url
+    while test $# -gt 0
+    do
+        pkg="$1"
+        eval url=\$`ypkg_uppercase $pkg`_GIT
+        test -z "$url" && die "Unknown package \"$pkg\""
+        shift
+    done
+}
+
+# Assert that a package is known and has been cloned.
+ypkg_assert_cloned() {
+    local pkg hash dir
+    while test $# -gt 0
+    do
+        pkg="$1"
+        ypkg_assert_available $pkg
+        hash=`ypkg_hash $pkg`
+        if test -z "$hash"
+        then
+            dir="$SRCDIR/$pkg"
+            test -e "$dir" && die "Invalid GIT repository at \"$dir\""
+            die "Package \"$pkg\" has not yet been cloned"
+        fi
+        shift
+    done
+}
+
+# Assert that a package has been configured.
+ypkg_assert_configured() {
+    local status
+    test $# -eq 1 || die "Expecting exactly 1 argument"
+    status=$(ypkg_status "$1")
+    case "$status" in
+        installed|upgradable|built|configured) ;;
+        *) die "Package \"$1\" has not yet been configured";;
+    esac
+}
+
+# Assert that a package has been built.
+ypkg_assert_built() {
+    local status
+    test $# -eq 1 || die "Expecting exactly 1 argument"
+    status=$(ypkg_status "$1")
+    case "$status" in
+        installed|upgradable|built) ;;
+        *) die "Package \"$1\" has not yet been built";;
+    esac
+}
+
+# Assert that a package has been installed.
+ypkg_assert_installed() {
+    local status
+    test $# -eq 1 || die "Expecting exactly 1 argument"
+    status=$(ypkg_status "$1")
+    case "$status" in
+        installed|upgradable) ;;
+        *) die "Package \"$1\" has not yet been installed";;
+    esac
+}
+
+# Yields the status of a package.
+ypkg_status() {
+    local pkg url hash count oldhash line status
+    test $# -eq 1 || die "Usage: ypkg_status PKG"
+    pkg="$1"
+    eval url=\$`ypkg_uppercase $pkg`_GIT
+    if test -z "$url"
+    then
+        echo "unknown"
+        return
+    fi
+    if ! test -e "$SRCDIR/$pkg"
+    then
+        echo "available"
+        return
+    fi
+    hash=$(ypkg_hash $pkg)
+    if test -z "$hash"
+    then
+        echo "dirty"
+        return
+    fi
+    if test -f "$MANIFEST"
+    then
+        count=$(grep -s "^$pkg:" "$MANIFEST" | wc -l)
+        if test $count -eq 1
+        then
+            # Parse manifest.
+            line=$(grep -s "^$pkg:" "$MANIFEST")
+            oldhash=$(echo "$line" | \
+                          sed 's/^[^:]*:[^:]*: *\([a-fA-F0-9]*\) *$/\1/' | \
+                          tr 'A-F' 'a-f')
+            if test "$oldhash" != "$hash"
+            then
+                echo "upgradable"
+            else
+                echo "$line" | sed 's/^[^:]*: *\([^: ]*\).*/\1/'
+            fi
+            return
+        elif test $count -gt 1
+        then
+            # Too many matching entries, purge the manifest.
+            grep -v "^$pkg:" "$MANIFEST" > "$MANIFEST.tmp"
+            mv -f "$MANIFEST.tmp" "$MANIFEST"
+            count=0
+        fi
+    fi
+    echo "cloned"
+}
+
+# Usage: ypkg_origin PKG
 #
-# Build and install Yeti.
+# Yields the GIT URL of package PKG.
 #
-if test x"$WANT_YETI" = xyes -o x"$WANT_MIRA" = xyes
-then
+ypkg_origin() {
+    local url
+    test $# -eq 1 || die "ypkg_origin: expecting exactly 1 argument"
+    eval url=\$`ypkg_uppercase "$1"`_GIT
+    test -z "$url" && die "Unknown package \"$1\""
+    echo "$url"
+}
+
+# Usage: ypkg_hash PKG
+#
+# Yields the hash value of the local GIT repository of package PKG.  An empty
+# result is returned if there is no valid local GIT repository for package PKG.
+#
+ypkg_hash() {
+    local hash dir
+    if test $# -eq 1
+    then
+        set +o errexit # Temporarily ignore unchecked errors.
+        dir=$(pwd)
+        if test $? -eq 0
+        then
+            cd "$SRCDIR/$1" 2>/dev/null
+            if test $? -eq 0
+            then
+                hash=$(git rev-parse HEAD 2>/dev/null | tr 'A-F' 'a-f')
+                test $? -eq 0 && echo "$hash"
+                cd "$dir"
+            fi
+        fi
+        set -o errexit # Restore safe behavior for unchecked errors.
+    fi
+}
+
+# Usage: ypkg_clone [PKG ...]
+#
+# Clone GIT repositories of package(s) PKG ...
+#
+ypkg_clone() {
+    local pkg func dir hash url
+    while test $# -gt 0
+    do
+        pkg="$1"
+        ypkg_assert_available $pkg
+        dir="$SRCDIR/$pkg"
+        if ! test -e "$dir"
+        then
+            func=clone_$(ypkg_lowercase $pkg)
+            if type $func >/dev/null 2>/dev/null
+            then
+                # Call package specific function.
+                $func
+            else
+                # Apply fallback.
+                cd "$SRCDIR"
+                url=`ypkg_origin "$pkg"`
+                git clone "$url" "$pkg"
+            fi
+        fi
+        ypkg_register $pkg cloned
+        shift
+    done
+}
+
+#
+# Usage: ypkg_update [PKG ...]
+#
+# Update the local GIT repositories of package(s) PKG ...
+#
+ypkg_update() {
+    local opt pkg func
+    while test $# -gt 0
+    do
+        pkg="$1"
+        ypkg_clone $pkg
+        func=update_$(ypkg_lowercase $pkg)
+        if type $func >/dev/null 2>/dev/null
+        then
+            # Call package specific function.
+            $func
+        else
+            # Apply fallback.
+            cd "$SRCDIR/$pkg"
+            git pull
+        fi
+        shift
+    done
+}
+
+#
+# Usage: ypkg_config [PKG ...]
+#
+# Configure package(s) PKG ...
+#
+ypkg_config() {
+    local pkg sfx dir
+    while test $# -gt 0
+    do
+        pkg="$1"
+        ypkg_assert_cloned $pkg
+        func=config_$(ypkg_lowercase $pkg)
+        if type $func >/dev/null 2>/dev/null
+        then
+            # Call package specific function.
+            $func
+        else
+            # Apply fallback.
+            dir="$SRCDIR/$pkg/build"
+            mkdir -p "$dir"
+            cd "$dir"
+            ../configure --yorick="$YORICK_EXE"
+        fi
+        ypkg_register $pkg configured
+        shift
+    done
+}
+
+#
+# Usage: ypkg_build [PKG ...]
+#
+# Build package(s) PKG ...
+#
+ypkg_build() {
+    local pkg func dir
+    while test $# -gt 0
+    do
+        pkg="$1"
+        ypkg_assert_configured $pkg
+        func=build_$(ypkg_lowercase $pkg)
+        if type $func >/dev/null 2>/dev/null
+        then
+            # Call package specific function.
+            echo "call $func..."
+            $func
+        else
+            # Apply fallback.
+            dir="$SRCDIR/$pkg/build"
+            test -f "$dir/Makefile" || die "Call \"ypkg configure $pkg\" first"
+            cd "$dir"
+            make clean
+            make all
+        fi
+        ypkg_register $pkg built
+        shift
+    done
+}
+
+#
+# Usage: ypkg_install [PKG ...]
+#
+# Install package(s) PKG ...
+#
+ypkg_install() {
+    local pkg sfx status
+    while test $# -gt 0
+    do
+        pkg=$1
+        status=$(ypkg_status $pkg)
+        if test "$status" = "available"
+        then
+            ypkg_clone $pkg
+            status=$(ypkg_status $pkg)
+        fi
+        if test "$status" = "cloned" -o "$status" = "upgradable"
+        then
+            ypkg_config $pkg
+            status=$(ypkg_status $pkg)
+        fi
+        if test "$status" = "configured"
+        then
+            ypkg_build $pkg
+            status=$(ypkg_status $pkg)
+        fi
+        if test "$status" = "built"
+        then
+            func=install_$(ypkg_lowercase $pkg)
+            if type $func >/dev/null 2>/dev/null
+            then
+                # Call package specific function.
+                $func
+            else
+                # Apply fallback.
+                dir="$SRCDIR/$pkg/build"
+                test -f "$dir/Makefile" || \
+                    die "Package $pkg not properly configured"
+                cd "$dir"
+                make install
+            fi
+            status="installed"
+            ypkg_register $pkg $status
+        fi
+        test "$status" = "installed" || die "Failed to install $pkg"
+        shift
+    done
+}
+
+#ypkg_upgrade() {
+#    local pkg status
+#    while test $# -gt 0
+#    do
+#        pkg="$1"
+#        shift
+#        status=$(ypkg_status $pkg)
+#        case "$status" in
+#            upgradable )
+#                config_$pkg
+#                build_$pkg
+#                install_$pkg
+#                ypkg_register $pkg
+#                ;;
+#        esac
+#    done
+#}
+
+ypkg_register() {
+    local pkg status hash
+    test $# -eq 2 -o $# -eq 3 || die "usage: ypkg_register PKG STATUS [HASH]"
+    pkg="$1"
+    ypkg_assert_available $pkg
+    status="$2"
+    case "$status" in
+        cloned|configured|built|installed) ;;
+        *) die "Invalid status \"$status\"";;
+    esac
+    if test $# -eq 2
+    then
+        hash=`ypkg_hash $pkg`
+        test -z "$hash" && die "Invalid GIT repository at \"$SRCDIR/$pkg\""
+    else
+        hash="$3"
+    fi
+    if test -f "$MANIFEST" && grep -qs "^$pkg:" "$MANIFEST"
+    then
+        sed -e "s/^$pkg:.*/$pkg:$status:$hash/" < "$MANIFEST" > "$MANIFEST.tmp"
+        mv -f "$MANIFEST.tmp" "$MANIFEST"
+    else
+        echo "$pkg:$status:$hash" >> "$MANIFEST"
+    fi
+}
+
+ypkg_forget() {
+    local pkg
+    while test $# -gt 0
+    do
+        pkg="$1"
+        ypkg_assert_available $pkg
+        if test -f "$MANIFEST"
+        then
+            grep -v "^$pkg:" < "$MANIFEST" > "$MANIFEST.tmp"
+            mv -f "$MANIFEST.tmp" "$MANIFEST"
+        fi
+        shift
+    done
+}
+
+#______________________________________________________________________________
+#
+# Settings for Yorick.
+#
+
+ypkg_define "yorick" "https://github.com/dhmunro/yorick.git"
+
+clone_yorick() {
+    if ! test -d "$SRCDIR/yorick"
+    then
+        cd "$SRCDIR"
+        git clone "$YORICK_GIT" yorick
+    fi
+}
+
+update_yorick() {
+    clone_yorick
+    cd "$SRCDIR/yorick"
+    git pull
+}
+
+config_yorick() {
+    clone_yorick
+    cd "$SRCDIR/yorick"
+    make Y_HOME=relocate ysite "CFLAGS=$CFLAGS" "CC=$CC"
+    make config "CFLAGS=$CFLAGS" "CC=$CC"
+}
+
+build_yorick() {
+    test -f "$SRCDIR/yorick/Make.cfg" || config_yorick
+    cd "$SRCDIR/yorick"
+    make clean
+    make -j4
+}
+
+install_yorick() {
+    test -x "$SRCDIR/yorick/yorick/yorick" || build_yorick
+    cd "$SRCDIR/yorick"
+    make install
+    cp -p install.rel relocate/README
+    cp -p play/libplay.* relocate/lib/.
+    cp -p gist/libgist.* relocate/lib/.
+    chmod 644 relocate/include/*.h
+    mkdir -p relocate/contrib
+    mv relocate/doc/README relocate/doc/CONTENTS
+    cp -p LICENSE.md ONEWS README.md TODO VERSION relocate/doc/.
+    cp -p gist/README relocate/doc/README.gist
+    cp -p play/README relocate/doc/README.play
+    if test "$HAVE_TEXI2HTML" = "yes"
+    then
+        cd doc/html
+        make
+        cd ../..
+        tar cf - doc/html doc/refs-html | tar xf - -C relocate
+    fi
+    find relocate -type d -exec chmod 755 {} \;
+    find relocate -type f -exec chmod ugo+r {} \;
+    mkdir -p relocate/emacs
+    cp -p emacs/README emacs/*.el relocate/emacs/.
+    emacs --batch relocate/emacs/yorick.el -f emacs-lisp-byte-compile
+    mkdir -p "$LIBEXECDIR"
+    rm -f "$LIBEXECDIR/yorick"
+    if test "$PRESERVE_OTHER_INSTALLED_FILES" = "yes"
+    then
+        mkdir -p "$LIBEXECDIR/yorick"
+        tar cf - relocate | tar -C "$LIBEXECDIR/yorick/" -xf -
+    else
+        rm -rf "$LIBEXECDIR/yorick"
+        mv relocate "$LIBEXECDIR/yorick"
+    fi
+    if test -L "$BINDIR/yorick" -o ! -e "$BINDIR/yorick"
+    then
+        rm -f "$BINDIR/yorick"
+        ln -s "$LIBEXECDIR/yorick/bin/yorick" "$BINDIR/yorick"
+    fi
+}
+
+#______________________________________________________________________________
+#
+# Settings for Yorick-z.
+#
+# Dependencies:
+#
+#     sudo apt install zlib1g-dev libpng-dev libjpeg-dev
+#
+
+ypkg_define "yorick-z" "https://github.com/dhmunro/yorick-z.git"
+
+clone_yorick_z() {
+    if ! test -d "$SRCDIR/yorick-z"
+    then
+        cd "$SRCDIR"
+        git clone "$YORICK_Z_GIT" yorick-z
+    fi
+}
+
+# We want to keep the source tree as clean as possible (for git) so we
+# rename Makefile as Makefile.cfg after configuration.
+
+update_yorick_z() {
+    clone_yorick_z
+    cd "$SRCDIR/yorick-z"
+    rm -f Makefile
+    git co Makefile
+    git pull
+}
+
+config_yorick_z() {
+    clone_yorick_z
+    cd "$SRCDIR/yorick-z"
+    ./configure --yorick="$YORICK_EXE" --no-avcodec
+    mv -f Makefile Makefile.cfg
+    git co Makefile
+}
+
+build_yorick_z() {
+    test -f "$SRCDIR/yorick-z/Makefile.cfg" || config_yorick_z
+    cd "$SRCDIR/yorick-z"
+    make -f Makefile.cfg clean
+    make -f Makefile.cfg all
+}
+
+install_yorick_z() {
+    test -f "$SRCDIR/yorick-z/yorz.so" || build_yorick_z
+    cd "$SRCDIR/yorick-z"
+    make -f Makefile.cfg install
+}
+
+#______________________________________________________________________________
+#
+# Settings for Yeti.
+#
+
+ypkg_define "yeti" "https://github.com/emmt/Yeti.git"
+
+clone_yeti() {
     if ! test -d "$SRCDIR/yeti"
     then
         cd "$SRCDIR"
         git clone "$YETI_GIT" yeti
     fi
+}
+
+update_yeti() {
+    clone_yeti
     cd "$SRCDIR/yeti"
     git pull
+}
+
+config_yeti() {
+    cd "$SRCDIR/yeti"
     ./configure --yorick="$YORICK_EXE"
+}
+
+build_yeti() {
+    cd "$SRCDIR/yeti"
     make clean
     make -j4 all
-    make install
-fi
+}
 
-#______________________________________________________________________
+install_yeti() {
+    cd "$SRCDIR/yeti"
+    make install
+}
+
+#______________________________________________________________________________
 #
-# Build and install OptimPackLegacy.
+# Settings for OptimPackLegacy.
 #
-if test x"$WANT_MIRA" = xyes
-then
+
+ypkg_define "optimpacklegacy" \
+            "https://github.com/emmt/OptimPackLegacy.git"
+
+clone_optimpacklegacy() {
     if ! test -d "$SRCDIR/optimpacklegacy"
     then
         cd "$SRCDIR"
         git clone "$OPTIMPACKLEGACY_GIT" optimpacklegacy
     fi
+}
+
+update_optimpacklegacy() {
+    clone_optimpacklegacy
     cd "$SRCDIR/optimpacklegacy"
     git pull
-    mkdir -p "$SRCDIR/optimpacklegacy/yorick/build"
-    cd "$SRCDIR/optimpacklegacy/yorick/build"
+}
+
+config_optimpacklegacy() {
+    local dir
+    dir="$SRCDIR/optimpacklegacy/yorick/build"
+    mkdir -p "$dir"
+    cd "$dir"
     ../configure --yorick="$YORICK_EXE"
+}
+
+build_optimpacklegacy() {
+    local dir
+    dir="$SRCDIR/optimpacklegacy/yorick/build"
+    test -f "$dir/Makefile" || config_optimpacklegacy
+    cd "$dir"
     make clean
     make -j4 all
-    make install
-fi
+}
 
-#______________________________________________________________________
+install_optimpacklegacy() {
+    local dir
+    dir="$SRCDIR/optimpacklegacy/yorick/build"
+    test -f "$dir/optimpacklegacy.so" || build_optimpacklegacy
+    cd "$dir"
+    make install
+}
+
+#______________________________________________________________________________
 #
-# Build and install YNFFT.
+# Settings for OptimPack.
+#
+
+ypkg_define "optimpack" \
+            "https://github.com/emmt/OptimPack.git"
+
+clone_optimpack() {
+    if ! test -d "$SRCDIR/optimpack"
+    then
+        cd "$SRCDIR"
+        git clone "$OPTIMPACK_GIT" optimpack
+    fi
+}
+
+update_optimpack() {
+    clone_optimpack
+    cd "$SRCDIR/optimpack"
+    git pull
+}
+
+config_optimpack() {
+    local dir
+    dir="$SRCDIR/optimpack/yorick/build"
+    mkdir -p "$dir"
+    cd "$dir"
+    ../configure --yorick="$YORICK_EXE"
+}
+
+build_optimpack() {
+    local dir
+    dir="$SRCDIR/optimpack/yorick/build"
+    test -f "$dir/Makefile" || config_optimpack
+    cd "$dir"
+    make clean
+    make -j4 all
+}
+
+install_optimpack() {
+    local dir
+    dir="$SRCDIR/optimpack/yorick/build"
+    test -f "$dir/opky.so" || build_optimpack
+    cd "$dir"
+    make install
+}
+
+#______________________________________________________________________________
+#
+# Settings for XFFT.
+#
+
+ypkg_define "xfft" "https://github.com/emmt/XFFT.git"
+
+clone_xfft() {
+    if ! test -d "$SRCDIR/xfft"
+    then
+        cd "$SRCDIR"
+        git clone "$XFFT_GIT" xfft
+    fi
+}
+
+update_xfft() {
+    clone_xfft
+    cd "$SRCDIR/xfft"
+    git pull
+}
+
+config_xfft() {
+    clone_xfft
+    mkdir -p "$SRCDIR/xfft/build"
+    cd "$SRCDIR/xfft/build"
+    ../configure --yorick="$YORICK_EXE"
+}
+
+build_xfft() {
+    test -f "$SRCDIR/xfft/build/Makefile" || config_xfft
+    cd "$SRCDIR/xfft/build"
+    make clean
+    make all
+}
+
+install_xfft() {
+    test -f "$SRCDIR/xfft/build/xfft.so" || build_xfft
+    cd "$SRCDIR/xfft/build"
+    make install
+}
+
+#______________________________________________________________________________
+#
+# Settings YNFFT.
 #
 # To install nfft libraries:
 #
 #     sudo apt-get install libfftw3-dev libnfft3-dev
 #
-if test x"$WANT_MIRA" = xyes
-then
+
+ypkg_define "ynfft" "https://github.com/emmt/ynfft.git"
+
+clone_ynfft() {
     if ! test -d "$SRCDIR/ynfft"
     then
         cd "$SRCDIR"
         git clone "$YNFFT_GIT" ynfft
     fi
+}
+
+update_ynfft() {
+    clone_ynfft
     cd "$SRCDIR/ynfft"
     git pull
+}
+
+config_ynfft() {
     mkdir -p "$SRCDIR/ynfft/build"
     cd "$SRCDIR/ynfft/build"
     ../configure --yorick="$YORICK_EXE"
+}
+
+build_ynfft() {
+    local dir
+    dir="$SRCDIR/ynfft/build"
+    test -f "$dir/Makefile" || config_ynfft
+    cd "$dir"
     make clean
     make all
-    make install
-fi
+}
 
-#______________________________________________________________________
+install_ynfft() {
+    local dir
+    dir="$SRCDIR/ynfft/build"
+    test -f "$dir/yor_nfft.so" || build_ynfft
+    cd "$dir"
+    make install
+}
+
+#______________________________________________________________________________
 #
 # Build and install MiRA.
 #
-if test x"$WANT_MIRA" = xyes
+
+ypkg_define "mira" "https://github.com/emmt/MiRA.git"
+
+if test "$WANT_MIRA" = yes
 then
+    cd "$SRCDIR/mira"
+    cd "$SRCDIR/mira"
+    ./configure --yorick="$YORICK_EXE" --bindir="$BINDIR" --mandir="$MANDIR"
+fi
+
+clone_mira() {
     if ! test -d "$SRCDIR/mira"
     then
         cd "$SRCDIR"
@@ -192,20 +841,412 @@ then
         git submodule update
         git submodule foreach 'git checkout master'
     fi
+}
+
+update_mira() {
+    clone_mira
     cd "$SRCDIR/mira"
     git pull
     git submodule foreach 'git pull'
+}
+
+config_mira() {
+    local subdir
+    clone_mira
     for subdir in ipy ylib yoifits
     do
         mkdir -p "$SRCDIR/mira/lib/$subdir/build"
         cd "$SRCDIR/mira/lib/$subdir/build"
         ../configure --yorick="$YORICK_EXE"
+    done
+    mkdir -p "$SRCDIR/mira/build"
+    cd "$SRCDIR/mira/build"
+    ../configure --yorick="$YORICK_EXE" --bindir="$BINDIR" --mandir="$MANDIR"
+}
+
+build_mira() {
+    local subdir
+    test -f "$SRCDIR/mira/build/Makefile" || config_mira
+    for subdir in ipy ylib yoifits
+    do
+        cd "$SRCDIR/mira/lib/$subdir/build"
         make clean
         make
+    done
+    cd "$SRCDIR/mira/build"
+    make clean
+    make
+}
+
+install_mira() {
+    local subdir
+    test -f "$SRCDIR/mira/build/Makefile" || build_mira
+    for subdir in ipy ylib yoifits
+    do
+        cd "$SRCDIR/mira/lib/$subdir/build"
         make install
     done
-    cd "$SRCDIR/mira"
-    ./configure --yorick="$YORICK_EXE" --bindir="$BINDIR" --mandir="$MANDIR"
-    make clean
+    cd "$SRCDIR/mira/build"
     make install
+}
+
+#______________________________________________________________________________
+#
+# Build and install YGSL.
+#
+# Dependencies:
+#
+#     sudo apt install libgsl
+#
+
+ypkg_define "ygsl" "https://github.com/emmt/ygsl.git"
+
+clone_ygsl() {
+    if ! test -d "$SRCDIR/ygsl"
+    then
+        cd "$SRCDIR"
+        git clone "$YGSL_GIT" ygsl
+    fi
+}
+
+update_ygsl() {
+    clone_ygsl
+    cd "$SRCDIR/ygsl"
+    git pull
+}
+
+config_ygsl() {
+    clone_ygsl
+    mkdir -p "$SRCDIR/ygsl/build"
+    cd "$SRCDIR/ygsl/build"
+    ../configure --yorick="$YORICK_EXE"
+}
+
+build_ygsl() {
+    test -f "$SRCDIR/ygsl/build/Makefile" || config_ygsl
+    cd "$SRCDIR/ygsl/build"
+    make clean
+    make all
+}
+
+install_ygsl() {
+    test -f "$SRCDIR/ygsl/build/ygsl.so" || build_ygsl
+    cd "$SRCDIR/ygsl/build"
+    make install
+}
+
+#______________________________________________________________________________
+#
+
+ypkg_define "yfitsio" "https://github.com/emmt/YFITSIO.git"
+ypkg_define "yorxpa" "https://github.com/emmt/YorXPA.git"
+ypkg_define "ylib" "https://github.com/emmt/ylib.git"
+ypkg_define "ipy" "https://github.com/emmt/IPY.git"
+ypkg_define "yoifits" "https://github.com/emmt/YOIFITS.git"
+ypkg_define "yandor" "https://github.com/emmt/YAndor.git"
+ypkg_define "ydlwrap" "https://github.com/emmt/YDLWrap.git"
+ypkg_define "ylapack" "https://github.com/emmt/YLapack.git"
+ypkg_define "ytotvar" "https://github.com/emmt/YTotVar.git"
+ypkg_define "yimage" "https://github.com/emmt/YImage.git"
+ypkg_define "yusb" "https://github.com/emmt/yusb.git"
+ypkg_define "ysox" "https://github.com/emmt/YSoX.git"
+ypkg_define "yunix" "https://github.com/emmt/YUnix.git"
+
+config_ydlwrap() {
+    mkdir -p "$SRCDIR/ydlwrap/build"
+    cd "$SRCDIR/ydlwrap/build"
+    ../configure --yorick="$YORICK_EXE" \
+                 --cflags='-DHAVE_FFCALL -DHAVE_LIBTOOL' \
+                 --deplibs='-lavcall -lltdl -ldl'
+}
+
+#______________________________________________________________________________
+#
+# COMMANDS
+#
+
+# Implements: ypkg register [--] PKG ...
+#
+# Register package(s) PKG ... in the database after they have been installed.
+#
+ypkg_command_register() {
+    local opt
+    opt="yes"
+    while test $# -gt 0 -a "$opt" = yes
+    do
+        case "$1" in
+            -- ) opt="no";;
+            -* ) die "Invalid option \"$1\"";;
+            *  ) break;;
+        esac
+        shift
+    done
+    while test $# -gt 0
+    do
+        ypkg_register "$1" "installed"
+        shift
+    done
+}
+
+# Implements: ypkg forget [--] PKG ...
+#
+# Remove package(s) PKG ... from the database.
+#
+ypkg_command_forget() {
+    local opt
+    opt="yes"
+    while test $# -gt 0 -a "$opt" = yes
+    do
+        case "$1" in
+            -- ) opt="no";;
+            -* ) die "Invalid option \"$1\"";;
+            *  ) break;;
+        esac
+        shift
+    done
+    ypkg_forget "$@"
+}
+
+# Implements: ypkg list [--]
+#
+# List available packages and their status.
+#
+ypkg_command_list() {
+    local opt pkg status
+    opt="yes"
+    while test $# -gt 0 -a "$opt" = yes
+    do
+        case "$1" in
+            -- ) opt="no";;
+            -* ) die "Invalid option \"$1\"";;
+            *  ) break;;
+        esac
+        shift
+    done
+    test $# -eq 0 || die "Too many arguments"
+    ypkg_command_check $PACKAGES
+}
+
+# Implements: ypkg check [--] [PKG ...]
+#
+# Check packages and their status.
+#
+ypkg_command_check() {
+    local opt pkg packages status
+    opt="yes"
+    while test $# -gt 0 -a "$opt" = yes
+    do
+        case "$1" in
+            -- ) opt="no";;
+            -* ) die "Invalid option \"$1\"";;
+            *  ) break;;
+        esac
+        shift
+    done
+    if test $# -gt 0
+    then
+        packages="$@"
+    else
+        packages=$PACKAGES
+    fi
+    for pkg in $packages
+    do
+        status=`ypkg_status $pkg`
+        printf "%-20s %s\n" $pkg $status
+    done
+}
+
+# Implements: ypkg clone [--] PKG [...]
+#
+# Clone packages.
+#
+ypkg_command_clone() {
+    local opt
+    opt="yes"
+    while test $# -gt 0 -a "$opt" = yes
+    do
+        case "$1" in
+            -- ) opt="no";;
+            -* ) die "Invalid option \"$1\"";;
+            *  ) break;;
+        esac
+        shift
+    done
+    test $# -gt 0 || die "Usage: ypkg clone [--] PKG [...]"
+    ypkg_clone "$@"
+}
+
+#
+# Implements: ypkg update [--] [PKG ...]
+#
+# Update the local GIT repositories of package(s) PKG ...
+#
+ypkg_command_update() {
+    local opt pkg sfx status
+    opt="yes"
+    while test $# -gt 0 -a "$opt" = yes
+    do
+        case "$1" in
+            -- ) opt="no";;
+            -* ) die "Invalid option \"$1\"";;
+            *  ) break;;
+        esac
+        shift
+    done
+    if test $# -eq 0
+    then
+        ypkg_update `ypkg_cloned_packages`
+    else
+        ypkg_update "$@"
+    fi
+}
+
+# Implements: ypkg config [--] PKG [...]
+#
+# Configure packages.
+#
+ypkg_command_config() {
+    local opt
+    opt="yes"
+    while test $# -gt 0 -a "$opt" = yes
+    do
+        case "$1" in
+            -- ) opt="no";;
+            -* ) die "Invalid option \"$1\"";;
+            *  ) break;;
+        esac
+        shift
+    done
+    test $# -gt 0 || die "Usage: ypkg config [--] PKG [...]"
+    ypkg_config "$@"
+}
+
+# Implements: ypkg build [--] PKG [...]
+#
+# Build packages.
+#
+ypkg_command_build() {
+    local opt
+    opt="yes"
+    while test $# -gt 0 -a "$opt" = yes
+    do
+        case "$1" in
+            -- ) opt="no";;
+            -* ) die "Invalid option \"$1\"";;
+            *  ) break;;
+        esac
+        shift
+    done
+    test $# -gt 0 || die "Usage: ypkg build [--] PKG [...]"
+    ypkg_build "$@"
+}
+
+# Implements: ypkg install [--] PKG [...]
+#
+# Install packages.
+#
+ypkg_command_install() {
+    local opt
+    opt="yes"
+    while test $# -gt 0 -a "$opt" = yes
+    do
+        case "$1" in
+            -- ) opt="no";;
+            -* ) die "Invalid option \"$1\"";;
+            *  ) break;;
+        esac
+        shift
+    done
+    test $# -gt 0 || die "Usage: ypkg install [--] PKG [...]"
+    ypkg_install "$@"
+}
+
+ypkg_command_help() {
+    cat <<EOF
+Usage: ypkg COMMAND [OPTIONS ...] [--] [PKG ...]
+
+Manage Yorick packages.  The following high level commands are available:
+
+    help
+        Print this help.
+
+    list [--]
+        List available packages and their status.  Possible status:
+         - "unknown"    if package is not in the database of known packages;
+         - "available"  if package is available but not installed;
+         - "cloned"     if repository of package has been cloned;
+         - "configured" if package has been configured;
+         - "built"      if package has been built;
+         - "installed"  if package has been installed;
+         - "upgradable" if package has been installed but a new version is
+                        in the local repository;
+         - "dirty"      if local package repository exists but is not a valid
+                        GIT repository;
+
+    check [--] [PKG ...]
+        Check status of package(s).  If no package names are specified,
+        all available packages are considered (like the "list" command).
+
+    install [--] PKG [...]
+        Install package(s).  Installing a package automatically performs
+        low level operations "clone" (if there is no local package
+        repository), "config" (if package has not yet been configured) and
+        "build" (if package has not yet been built).
+
+    update [--] [PKG ...]
+        Update local repositories of packages.  If no packages are
+        specified, all local repositories are updated.  If the local
+        repository of a specified package does not yet exist, the remote
+        repository is first cloned.
+
+    upgrade [--] [PKG ...]
+        Upgrade packages.  If no packages are specified, all upgradable
+        packages are upgraded.  If the local repository of a specified
+        package does not yet exist, the remote repository is first cloned.
+
+
+Low-level commands:
+
+    clone [--] PKG [...]
+        Clone repository of package(s) into a local directory.  Nothing
+        is done if local repository alraedy exists.
+
+    configure [--] PKG [...]
+    config [--] PKG [...]
+        Configure package(s) for building.  This operation should be done
+        after "clone" or "opdate".
+
+    build [--] PKG [...]
+        Build package(s).  This operation should be done after "config".
+
+    register [--] [PKG ...]
+        Register package(s) assumed they have been installed.  Useful for
+        packages that have been installed by hand.
+
+    forget [--] [PKG ...]
+        Forget (that is, un-register) package(s).
+EOF
+}
+
+# Sort known packages.
+PACKAGES=$(echo $PACKAGES | tr ' ' "\n" | sort)
+
+if test $# -lt 1
+then
+    ypkg_command_help
+    exit 1
 fi
+
+command="$1"
+shift
+case "$command" in
+    build|check|clone|forget|help|install|list|register|update|upgrade)
+        ypkg_command_$command "$@"
+        ;;
+    config|configure)
+        ypkg_command_config "$@"
+        ;;
+    *)
+        die "Unknown command \"$command\""
+        ;;
+esac
