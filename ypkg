@@ -410,6 +410,20 @@ ypkg_install() {
     done
 }
 
+ypkg_reinstall() {
+    local pkg sfx status
+    while test $# -gt 0
+    do
+        pkg=$1
+        ypkg_assert_available $pkg
+        ypkg_clone $pkg
+        ypkg_config $pkg
+        ypkg_build $pkg
+        ypkg_install $pkg
+        shift
+    done
+}
+
 #ypkg_upgrade() {
 #    local pkg status
 #    while test $# -gt 0
@@ -1169,6 +1183,26 @@ ypkg_command_install() {
     ypkg_install "$@"
 }
 
+# Implements: ypkg reinstall [--] PKG [...]
+#
+# Install packages.
+#
+ypkg_command_reinstall() {
+    local opt
+    opt="yes"
+    while test $# -gt 0 -a "$opt" = yes
+    do
+        case "$1" in
+            -- ) opt="no";;
+            -* ) die "Invalid option \"$1\"";;
+            *  ) break;;
+        esac
+        shift
+    done
+    test $# -gt 0 || die "Usage: ypkg reinstall [--] PKG [...]"
+    ypkg_reinstall "$@"
+}
+
 ypkg_command_help() {
     cat <<EOF
 Usage: ypkg COMMAND [OPTIONS ...] [--] [PKG ...]
@@ -1200,6 +1234,10 @@ Manage Yorick packages.  The following high level commands are available:
         low level operations "clone" (if there is no local package
         repository), "config" (if package has not yet been configured) and
         "build" (if package has not yet been built).
+
+    reinstall [--] PKG [...]
+        Re-install package(s).  Like "install" but perform every operations
+        "config", "build" and "install" whatever the current package status.
 
     update [--] [PKG ...]
         Update local repositories of packages.  If no packages are
@@ -1248,7 +1286,7 @@ fi
 command="$1"
 shift
 case "$command" in
-    build|check|clone|forget|help|install|list|register|update|upgrade)
+    build|check|clone|forget|help|install|reinstall|list|register|update|upgrade)
         ypkg_command_$command "$@"
         ;;
     config|configure)
