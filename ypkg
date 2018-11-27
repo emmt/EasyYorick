@@ -272,8 +272,8 @@ ypkg_clone() {
                 url=`ypkg_origin "$pkg"`
                 git clone "$url" "$pkg"
             fi
+            ypkg_register $pkg cloned
         fi
-        ypkg_register $pkg cloned
         shift
     done
 }
@@ -1095,7 +1095,14 @@ ypkg_command_update() {
     done
     if test $# -eq 0
     then
-        ypkg_update `ypkg_cloned_packages`
+        for pkg in $PACKAGES
+        do
+            status=$(ypkg_status $pkg)
+            case "$status" in
+                installed|upgradable|built|configured|cloned)
+                    ypkg_update $pkg;;
+            esac
+        done
     else
         ypkg_update "$@"
     fi
