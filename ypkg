@@ -534,7 +534,8 @@ install_yorick() {
     if test "$PRESERVE_OTHER_INSTALLED_FILES" = "yes"
     then
         mkdir -p "$LIBEXECDIR/yorick"
-        tar cf - relocate | tar -C "$LIBEXECDIR/yorick/" -xf -
+        cd "$SRCDIR/yorick/relocate"
+        tar cf - . | tar -C "$LIBEXECDIR/yorick/" -xf -
     else
         rm -rf "$LIBEXECDIR/yorick"
         mv relocate "$LIBEXECDIR/yorick"
