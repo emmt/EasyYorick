@@ -54,13 +54,38 @@ MANIFEST="$SRCDIR/MANIFEST"
 export CC=gcc
 export CFLAGS='-pipe -Wall -O2 -fomit-frame-pointer'
 
+YPKG_USE_COLORS="yes"
+
+if test "$YPKG_USE_COLORS" = "yes"
+then
+    YPKG_BLACK='\x1b[30m'
+    YPKG_RED='\x1b[31m'
+    YPKG_GREEN='\x1b[32m'
+    YPKG_YELLOW='\x1b[33m'
+    YPKG_BLUE='\x1b[34m'
+    YPKG_MAGENTA='\x1b[35m'
+    YPKG_CYAN='\x1b[36m'
+    YPKG_WHITE='\x1b[37m'
+    YPKG_RESET='\x1b[0m'
+else
+    YPKG_BLACK=
+    YPKG_RED=
+    YPKG_GREEN=
+    YPKG_YELLOW=
+    YPKG_BLUE=
+    YPKG_MAGENTA=
+    YPKG_CYAN=
+    YPKG_WHITE=
+    YPKG_RESET=
+fi
+
 die() {
-    echo >&2 "$*"
+    /bin/echo -e >&2 "${YPKG_RED}$*${YPKG_RESET}"
     exit 1
 }
 
 warn() {
-    echo >&2 "WARNING: $*"
+    /bin/echo -e >&2 "${YPKG_YELLOW}WARNING: $*${YPKG_RESET}"
     exit 1
 }
 
@@ -1047,7 +1072,7 @@ ypkg_command_list() {
 # Check packages and their status.
 #
 ypkg_command_check() {
-    local opt pkg packages status
+    local opt pkg packages status text color
     opt="yes"
     while test $# -gt 0 -a "$opt" = yes
     do
@@ -1066,8 +1091,29 @@ ypkg_command_check() {
     fi
     for pkg in $packages
     do
-        status=`ypkg_status $pkg`
-        printf "%-20s %s\n" $pkg $status
+        status=$(ypkg_status $pkg)
+        text=$(printf "%-20s %s\n" $pkg $status)
+        case "$status" in
+            available )
+                color="$YPKG_BLUE"
+                ;;
+            cloned )
+                color="$YPKG_CYAN"
+                ;;
+            configured | built )
+                color="$YPKG_YELLOW"
+                ;;
+            installed )
+                color="$YPKG_GREEN"
+                ;;
+            upgradable )
+                color="$YPKG_MAGENTA"
+                ;;
+            * )
+                color="$YPKG_RED"
+                ;;
+        esac
+        /bin/echo -e "${color}${text}${YPKG_RESET}"
     done
 }
 
