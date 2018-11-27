@@ -1092,7 +1092,8 @@ ypkg_command_check() {
     for pkg in $packages
     do
         status=$(ypkg_status $pkg)
-        text=$(printf "%-20s %s\n" $pkg $status)
+        text=$(printf "%-20s %s\n" $pkg $status \
+                   | sed 's/ /./g;s/\(\.\.*\)/ \1 /')
         case "$status" in
             available )
                 color="$YPKG_BLUE"
