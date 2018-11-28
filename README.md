@@ -119,15 +119,15 @@ The following high level commands are available:
 - `ypkg list [--]`
 
   List available packages and their status.  Possible status are:
-  - "unknown"    if package is not in the database of known packages;
-  - "available"  if package is available but not installed;
-  - "cloned"     if repository of package has been cloned;
-  - "configured" if package has been configured;
-  - "built"      if package has been built;
-  - "installed"  if package has been installed;
-  - "upgradable" if package has been installed but a new version is
+  - **unknown** if package is not in the database of known packages;
+  - **available** if package is available but not installed;
+  - **cloned** if repository of package has been cloned;
+  - **configured** if package has been configured;
+  - **built** if package has been built;
+  - **installed** if package has been installed;
+  - **upgradable** if package has been installed but a new version is
     in the local repository;
-  - "dirty"      if local package repository exists but is not a valid
+  - **dirty** if local package repository exists but is not a valid
     GIT repository;
 
 - `ypkg check [--] [PKG ...]`
