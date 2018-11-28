@@ -110,12 +110,7 @@ done
 
 # Create the Makefile.
 cfg_dst="./Makefile"
-if test "$cfg_inplace" = "yes"; then
-    cfg_src="$cfg_dst.bak"
-    mv -f "$cfg_dst" "$cfg_src"
-else
-    cfg_src="$cfg_srcdir/Makefile"
-fi
+cfg_src="$cfg_srcdir/Makefile.in"
 
 cfg_filter=""
 cfg_add_rule "PREFIX"  "$cfg_prefix"

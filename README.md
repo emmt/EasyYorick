@@ -29,8 +29,7 @@ git clone git@github.com:emmt/EasyYorick.git
 ```
 
 Either of these commands create a directory `EasyYorick` with the sources.  The
-next steps are to [configure and install](#configure-and-install) the software
-as explained below.
+next steps are to [configure and install](#configure-and-install) the software.
 
 
 ### Download and extract sources
@@ -44,34 +43,29 @@ unzip -a EasyYorick-master.zip
 ```
 
 This creates a directory `EasyYorick-master` with the sources.  The next steps
-are to [configure and install](#configure-and-install) the software as
-explained below.
+are to [configure and install](#configure-and-install) the software.
 
 
 ### Configure and install
 
-First create a directory to build the software, for instance:
+Configuration can be done from anywhere (it just creates a file `Makefile`
+with commands and settings to install the software).  The easier is to
+configure and install from the source directory as explanied below.
+
+Move to the source directory and call the configuration script:
 
 ```sh
-mkdir -p "$SRCDIR/build"
+cd "$SRCDIR"
+./configure --prefix="$PREFIX"
 ```
 
-with `$SRCDIR` the directory where are the sources of **EasyYorick**
+where `$SRCDIR` the directory where are the sources of **EasyYorick**
 (presumably `EasyYorick` or `EasyYorick-master` depending how you did retrieve
-the sources).
-
-Then move to this directory and call the configuration script:
-
-```sh
-cd "$SRCDIR/build"
-"$SRCDIR/configure" --prefix="$PREFIX"
-```
-
-where `$PREFIX` is the top directory where to install the software.  If this
-directory does not yet exist, it will be created during installation.  If
-option `--prefix=...` is not specified, the default installation directory will
-be `$HOME/easy-yorick`.  There are other options (call the configuration script
-with `--help` to list them).
+the sources) and where `$PREFIX` is the top directory where to install the
+software.  If this directory does not yet exist, it will be created during
+installation.  If option `--prefix=...` is not specified, the default
+installation directory will be `$HOME/easy-yorick`.  There are other options
+(call the configuration script with `--help` to list them).
 
 Finally, installation is done by:
 

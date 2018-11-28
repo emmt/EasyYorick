@@ -6,6 +6,7 @@ work/
 *~
 
 # Automatically generated files:
+Makefile
 doc/*.aux
 doc/*.bbl
 doc/*.blg
