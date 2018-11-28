@@ -535,8 +535,8 @@ config_ypkg() {
     test -e "$SRCDIR/ypkg" || clone_ypkg
     mkdir -p "$SRCDIR/ypkg/build"
     cd "$SRCDIR/ypkg/build"
-    ../configure --prefix="$PREFIX" --cc="$CC" --CFLAGS="$CFLAGS" \
-                 --LDFLAGS="$LDFLAGS"
+    ../configure --prefix="$PREFIX" --cc="$CC" --cflags="$CFLAGS" \
+                 --ldflags="$LDFLAGS"
 }
 
 build_ypkg() {
