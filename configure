@@ -79,15 +79,6 @@ options:
 EOF
 }
 
-# Make sure PREFIX is absolute path.
-test -e "$cfg_prefix" || mkdir -p "$cfg_prefix"
-test -d "$cfg_prefix" || cfg_die "\"$cfg_prefix\" is not a directory"
-
-cfg_dir=$(pwd -P)
-cd "$cfg_prefix"
-cfg_prefix=$(pwd -P)
-cd "$cfg_dir"
-
 if cmp -s "./Makefile" "$cfg_srcdir/Makefile"; then
     cfg_inplace=yes
 else
@@ -119,6 +110,14 @@ do
             cfg_die "Unknown option \"$cfg_arg\""
     esac
 done
+
+# Make sure PREFIX is absolute path.
+test -e "$cfg_prefix" || mkdir -p "$cfg_prefix"
+test -d "$cfg_prefix" || cfg_die "\"$cfg_prefix\" is not a directory"
+cfg_dir=$(pwd -P)
+cd "$cfg_prefix"
+cfg_prefix=$(pwd -P)
+cd "$cfg_dir"
 
 # Create the Makefile.
 cfg_dst="./Makefile"
