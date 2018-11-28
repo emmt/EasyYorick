@@ -16,10 +16,10 @@ install:
 	mkdir -p "${PREFIX}/bin"
 	rm -f "${PREFIX}/bin/ypkg"
 	sed -E <"${srcdir}/ypkg" >"${PREFIX}/bin/ypkg" \
-	    -e 's%^( *export  *)?PREFIX=).*%\1"${PREFIX}"%' \
-	    -e 's%^( *export  *)?CC=).*%\1"${CC}"%' \
-	    -e 's%^( *export  *)?CFLAGS=).*%\1"${CFLAGS}"%' \
-	    -e 's%^( *export  *)?LDFLAGS=).*%\1"${LDFLAGS}"%'
+	    -e 's%^( *(export  *)?PREFIX=).*%\1"${PREFIX}"%' \
+	    -e 's%^( *(export  *)?CC=).*%\1"${CC}"%' \
+	    -e 's%^( *(export  *)?CFLAGS=).*%\1"${CFLAGS}"%' \
+	    -e 's%^( *(export  *)?LDFLAGS=).*%\1"${LDFLAGS}"%'
 	chmod 755 "${PREFIX}/bin/ypkg"
 	mkdir -p "${PREFIX}/etc/ypkg"
 	touch "${PREFIX}/etc/ypkg/MANIFEST"
