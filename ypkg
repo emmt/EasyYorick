@@ -583,7 +583,7 @@ install_yorick() {
     if test -L "$BINDIR/yorick" -o ! -e "$BINDIR/yorick"
     then
         rm -f "$BINDIR/yorick"
-        ln -s "$LIBEXECDIR/yorick/bin/yorick" "$BINDIR/yorick"
+        ln -s "../libexec/yorick/bin/yorick" "$BINDIR/yorick"
     fi
 }
 
