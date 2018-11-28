@@ -58,15 +58,16 @@ YPKG_USE_COLORS="yes"
 
 if test "$YPKG_USE_COLORS" = "yes"
 then
-    YPKG_BLACK='\x1b[30m'
-    YPKG_RED='\x1b[31m'
-    YPKG_GREEN='\x1b[32m'
-    YPKG_YELLOW='\x1b[33m'
-    YPKG_BLUE='\x1b[34m'
-    YPKG_MAGENTA='\x1b[35m'
-    YPKG_CYAN='\x1b[36m'
-    YPKG_WHITE='\x1b[37m'
-    YPKG_RESET='\x1b[0m'
+    # '\e' is escape char for `printf` ('\x1b' for `/bin/echo -e`)
+    YPKG_BLACK='\e[30m'
+    YPKG_RED='\e[31m'
+    YPKG_GREEN='\e[32m'
+    YPKG_YELLOW='\e[33m'
+    YPKG_BLUE='\e[34m'
+    YPKG_MAGENTA='\e[35m'
+    YPKG_CYAN='\e[36m'
+    YPKG_WHITE='\e[37m'
+    YPKG_RESET='\e[0m'
 else
     YPKG_BLACK=
     YPKG_RED=
@@ -80,13 +81,12 @@ else
 fi
 
 die() {
-    /bin/echo -e >&2 "${YPKG_RED}$*${YPKG_RESET}"
+    printf >&2 "${YPKG_RED}%s${YPKG_RESET}\n" "$*"
     exit 1
 }
 
 warn() {
-    /bin/echo -e >&2 "${YPKG_YELLOW}WARNING: $*${YPKG_RESET}"
-    exit 1
+    printf >&2 "${YPKG_YELLOW}WARNING: %s${YPKG_RESET}\n" "$*"
 }
 
 test -e "$PREFIX" || mkdir -p "$PREFIX"
@@ -1092,8 +1092,6 @@ ypkg_command_check() {
     for pkg in $packages
     do
         status=$(ypkg_status $pkg)
-        text=$(printf "%-20s %s\n" $pkg $status \
-                   | sed 's/ /./g;s/\(\.\.*\)/ \1 /')
         case "$status" in
             available )
                 color="$YPKG_BLUE"
@@ -1114,7 +1112,8 @@ ypkg_command_check() {
                 color="$YPKG_RED"
                 ;;
         esac
-        /bin/echo -e "${color}${text}${YPKG_RESET}"
+        printf "${color}%-20s %s${YPKG_RESET}\n" $pkg $status \
+            | sed 's/ /./g;s/\(\.\.*\)/ \1 /'
     done
 }
 
