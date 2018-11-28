@@ -512,6 +512,45 @@ ypkg_forget() {
 
 #______________________________________________________________________________
 #
+# Settings for EasyYorick/ypkg.
+#
+
+ypkg_define "ypkg" "https://github.com/emmt/EasyYorick.git"
+
+clone_ypkg() {
+    if ! test -d "$SRCDIR/ypkg"
+    then
+        cd "$SRCDIR"
+        git clone "$YPKG_GIT" ypkg
+    fi
+}
+
+update_ypkg() {
+    test -e "$SRCDIR/ypkg" || clone_ypkg
+    cd "$SRCDIR/ypkg"
+    git pull
+}
+
+config_ypkg() {
+    test -e "$SRCDIR/ypkg" || clone_ypkg
+    mkdir -p "$SRCDIR/ypkg/build"
+    cd "$SRCDIR/ypkg/build"
+    ../configure --prefix="$PREFIX" --cc="$CC" --CFLAGS="$CFLAGS" \
+                 --LDFLAGS="$LDFLAGS"
+}
+
+build_ypkg() {
+    test -f "$SRCDIR/ypkg/build/Makefile" || config_ypkg
+}
+
+install_ypkg() {
+    test -f "$SRCDIR/ypkg/build/Makefile" || config_ypkg
+    cd "$SRCDIR/ypkg/build"
+    make install
+}
+
+#______________________________________________________________________________
+#
 # Settings for Yorick.
 #
 
