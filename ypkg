@@ -43,16 +43,18 @@ PACKAGES=""
 
 # In principle, the following does not need changes.  But you can
 # have a look to see what will happen if you run this script.
+CONFIGDIR="$PREFIX/etc/ypkg"
 LIBDIR="$PREFIX/lib"
 LIBEXECDIR="$PREFIX/libexec"
 BINDIR="$PREFIX/bin"
 SHAREDIR="$PREFIX/share"
 MANDIR="$SHAREDIR/man"
 YORICK_EXE="$LIBEXECDIR/yorick/bin/yorick"
-MANIFEST="$SRCDIR/MANIFEST"
+MANIFEST="$CONFIGDIR/MANIFEST"
 
 export CC=gcc
 export CFLAGS='-pipe -Wall -O2 -fomit-frame-pointer'
+export LDFLAGS=''
 
 YPKG_USE_COLORS="yes"
 
