@@ -77,11 +77,13 @@ EOF
 }
 
 # Make sure PREFIX is absolute path.
-test -e "$cfg_prefix" && mkdir -p "$cfg_prefix"
-odir=$(pwd)
+test -e "$cfg_prefix" || mkdir -p "$cfg_prefix"
+test -d "$cfg_prefix" || cfg_die "\"$cfg_prefix\" is not a directory"
+
+cfg_dir=$(pwd -P)
 cd "$cfg_prefix"
-cfg_prefix=$(pwd)
-cd "$odir"
+cfg_prefix=$(pwd -P)
+cd "$cfg_dir"
 
 if cmp -s "./Makefile" "$cfg_srcdir/Makefile"; then
     cfg_inplace=yes
