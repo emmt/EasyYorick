@@ -534,8 +534,8 @@ update_ypkg() {
 config_ypkg() {
     test -e "$SRCDIR/ypkg" || clone_ypkg
     cd "$SRCDIR/ypkg"
-    ../configure --prefix="$PREFIX" --cc="$CC" --cflags="$CFLAGS" \
-                 --ldflags="$LDFLAGS"
+    ./configure --prefix="$PREFIX" --cc="$CC" --cflags="$CFLAGS" \
+                --ldflags="$LDFLAGS"
 }
 
 build_ypkg() {
