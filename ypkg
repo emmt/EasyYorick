@@ -569,7 +569,6 @@ install_yorick() {
     cp -p emacs/README emacs/*.el relocate/emacs/.
     emacs --batch relocate/emacs/yorick.el -f emacs-lisp-byte-compile
     mkdir -p "$LIBEXECDIR"
-    rm -f "$LIBEXECDIR/yorick"
     if test "$PRESERVE_OTHER_INSTALLED_FILES" = "yes"
     then
         mkdir -p "$LIBEXECDIR/yorick"
