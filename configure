@@ -10,6 +10,9 @@
 #
 #------------------------------------------------------------------------------
 
+# Exit immediately in case of untested errors.
+set -o errexit
+
 # The following default values can be overwritten by options on the
 # command line.
 cfg_prefix="$HOME/easy-yorick"
