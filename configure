@@ -1,0 +1,135 @@
+#! /bin/sh
+#
+# Configuration script for EasyYorick.
+#
+#------------------------------------------------------------------------------
+#
+# This file is licensed under the MIT "Expat" License.
+#
+# Copyright (c) 2018: Éric Thiébaut <https://github.com/EasyYorick>
+#
+#------------------------------------------------------------------------------
+
+# The following default values can be overwritten by options on the
+# command line.
+cfg_prefix="$HOME/easy-yorick"
+cfg_cc="gcc"
+cfg_cflags="-pipe -Wall -O2 -fomit-frame-pointer"
+cfg_ldflags=""
+
+# # The other values are pretty general.
+# cfg_tmpdir=.
+# cfg_tmpfile="$cfg_tmpdir/cfg-$$"
+# cfg_debug=no
+#
+# cfg_on_exit () {
+#     if test "$cfg_debug" = "no"; then
+#         rm -f "$cfg_tmpfile" "$cfg_tmpfile.i"
+#     fi
+# }
+#
+# trap cfg_on_exit 0
+
+cfg_progname=$0
+cfg_srcdir=$(dirname "$0")
+#cfg_path=$(readlink -fn "$@")
+#cfg_srcdir=$(dirname "$cfg_path")
+
+cfg_die () { echo >&2 "$cfg_progname: $*"; exit 1; }
+
+cfg_opt_value () { echo "$*" | sed -e 's/^--[^=]*=//'; }
+
+cfg_despace () { echo "$*" | sed -e 's/ /\\ /g'; }
+
+cfg_add_rule () {
+    local s t
+    s=$*
+    for t in "/" "%" "@" "|" "#" "," "-"
+    do
+        case "$s" in
+            *$t* ) ;;
+            * ) break
+        esac
+    done
+    if test "$t" = "-"
+    then
+        cfg_die "No valid separator found"
+    fi
+    s='[ 	]*'
+    s="s${t}^${s}${1}${s}=.*${t}${1}=${2}${t}"
+    if test "x$cfg_filter" = "x"; then
+        cfg_filter="$s"
+    else
+        cfg_filter="$cfg_filter;$s"
+    fi
+}
+
+cfg_help () {
+    cat <<EOF
+usage: $cfg_progname [-h|--help] [--yorick=PATH_TO_YORICK]
+options:
+  --prefix=DIR         Installation directory [$cfg_prefix].
+  --cc=CC              C compiler [$cfg_cc].
+  --cflags=CFLAGS      Compiler flags [$cfg_cflags].
+  --ldflags=LDFLAGS    Additional linker flags [$cfg_ldflags].
+  -h, --help           Print this help and exit.
+EOF
+}
+
+if cmp -s "./Makefile" "$cfg_srcdir/Makefile"; then
+    cfg_inplace=yes
+else
+    cfg_inplace=no
+fi
+
+while test $# -ge 1
+do
+    cfg_arg=$1
+    shift
+    case "$cfg_arg" in
+        -h | --help )
+            cfg_help
+            exit 0
+            ;;
+        --prefix=* )
+            cfg_prefix=$(cfg_opt_value "$cfg_arg")
+            ;;
+        --cc=* )
+            cfg_cc=$(cfg_opt_value "$cfg_arg")
+            ;;
+        --cflags=* )
+            cfg_cflags=$(cfg_opt_value "$cfg_arg")
+            ;;
+        --ldflags=* )
+            cfg_ldflags=$(cfg_opt_value "$cfg_arg")
+            ;;
+        * )
+            cfg_die "Unknown option \"$cfg_arg\""
+    esac
+done
+
+# Create the Makefile.
+cfg_dst="./Makefile"
+if test "$cfg_inplace" = "yes"; then
+    cfg_src="$cfg_dst.bak"
+    mv -f "$cfg_dst" "$cfg_src"
+else
+    cfg_src="$cfg_srcdir/Makefile"
+fi
+
+cfg_filter=""
+cfg_add_rule "PREFIX"  "$cfg_prefix"
+cfg_add_rule "CC"      "$cfg_cc"
+cfg_add_rule "CFLAGS"  "$cfg_cflags"
+cfg_add_rule "LDFLAGS" "$cfg_ldflags"
+cfg_add_rule "srcdir"  "$cfg_srcdir"
+sed < "$cfg_src" > "$cfg_dst" -e "$cfg_filter"
+
+if test "$cfg_inplace" = "yes"; then
+    rm -f "$cfg_src"
+fi
+
+echo "Makefile has been updated."
+echo "You can run 'make install' now."
+
+#------------------------------------------------------------------------------
