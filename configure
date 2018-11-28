@@ -35,6 +35,10 @@ cfg_ldflags=""
 
 cfg_progname=$0
 cfg_srcdir=$(dirname "$0")
+cfg_wrkdir=$(pwd -P)
+cd "$cfg_srcdir"
+cfg_srcdir=$(pwd -P)
+cd "$cfg_wrkdir"
 #cfg_path=$(readlink -fn "$@")
 #cfg_srcdir=$(dirname "$cfg_path")
 
@@ -79,12 +83,6 @@ options:
 EOF
 }
 
-if cmp -s "./Makefile" "$cfg_srcdir/Makefile"; then
-    cfg_inplace=yes
-else
-    cfg_inplace=no
-fi
-
 while test $# -ge 1
 do
     cfg_arg=$1
@@ -112,12 +110,10 @@ do
 done
 
 # Make sure PREFIX is absolute path.
-test -e "$cfg_prefix" || mkdir -p "$cfg_prefix"
-test -d "$cfg_prefix" || cfg_die "\"$cfg_prefix\" is not a directory"
-cfg_dir=$(pwd -P)
-cd "$cfg_prefix"
-cfg_prefix=$(pwd -P)
-cd "$cfg_dir"
+case "$cfg_prefix" in
+    /* ) ;;
+    * ) cfg_prefix="$cfg_wrkdir/$cfg_prefix";;
+esac
 
 # Create the Makefile.
 cfg_dst="./Makefile"
@@ -130,10 +126,6 @@ cfg_add_rule "CFLAGS"  "$cfg_cflags"
 cfg_add_rule "LDFLAGS" "$cfg_ldflags"
 cfg_add_rule "srcdir"  "$cfg_srcdir"
 sed < "$cfg_src" > "$cfg_dst" -e "$cfg_filter"
-
-if test "$cfg_inplace" = "yes"; then
-    rm -f "$cfg_src"
-fi
 
 echo "Makefile has been updated."
 echo "You can run 'make install' now."
