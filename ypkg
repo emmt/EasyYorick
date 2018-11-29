@@ -87,7 +87,7 @@ die() {
     exit 1
 }
 
-warn() {
+ypkg_warn() {
     printf >&2 "${YPKG_YELLOW}WARNING: %s${YPKG_RESET}\n" "$*"
 }
 
