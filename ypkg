@@ -922,7 +922,7 @@ build_mira() {
 
 install_mira() {
     test -f "$SRCDIR/mira/install.cfg" || config_mira
-    cd "$SRCDIR/mira/build"
+    cd "$SRCDIR/mira"
     make install
 }
 
