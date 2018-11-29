@@ -127,7 +127,7 @@ cfg_add_rule "LDFLAGS" "$cfg_ldflags"
 cfg_add_rule "srcdir"  "$cfg_srcdir"
 sed < "$cfg_src" > "$cfg_dst" -e "$cfg_filter"
 
-echo "Makefile has been updated."
+echo "Makefile has been created."
 echo "You can run 'make install' now."
 
 #------------------------------------------------------------------------------
