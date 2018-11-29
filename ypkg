@@ -885,68 +885,42 @@ install_ynfft() {
 
 ypkg_define "mira" "https://github.com/emmt/MiRA.git"
 
-if test "$WANT_MIRA" = yes
-then
-    cd "$SRCDIR/mira"
-    cd "$SRCDIR/mira"
-    ./configure --yorick="$YORICK_EXE" --bindir="$BINDIR" --mandir="$MANDIR"
-fi
-
 clone_mira() {
     if ! test -d "$SRCDIR/mira"
     then
         cd "$SRCDIR"
         git clone "$MIRA_GIT" mira
-        cd "$SRCDIR/mira"
-        git submodule init
-        git submodule update
-        git submodule foreach 'git checkout master'
     fi
 }
 
 update_mira() {
-    clone_mira
+    test -e "$SRCDIR/mira" || clone_mira
     cd "$SRCDIR/mira"
-    git pull
-    git submodule foreach 'git pull'
 }
 
 config_mira() {
-    local subdir
-    clone_mira
-    for subdir in ipy ylib yoifits
-    do
-        mkdir -p "$SRCDIR/mira/lib/$subdir/build"
-        cd "$SRCDIR/mira/lib/$subdir/build"
-        ../configure --yorick="$YORICK_EXE"
-    done
-    mkdir -p "$SRCDIR/mira/build"
-    cd "$SRCDIR/mira/build"
-    ../configure --yorick="$YORICK_EXE" --bindir="$BINDIR" --mandir="$MANDIR"
+    local status
+    ypkg_install yorick yeti optimpacklegacy ylib ipy yoifits
+    status=$(ypkg_status ynfft)
+    if ! test "$status" = "installed" -o "$status" = "upgradable"
+    then
+        ypkg_warn "You should also install package \"ynfft\""
+    fi
+    test -e "$SRCDIR/mira" || clone_mira
+    cd "$SRCDIR/mira"
+    ./configure --prefix="$PREFIX" --yorick="$YORICK_EXE" \
+                --mandir="$MANDIR" --bindir="$BINDIR"
 }
 
 build_mira() {
-    local subdir
-    test -f "$SRCDIR/mira/build/Makefile" || config_mira
-    for subdir in ipy ylib yoifits
-    do
-        cd "$SRCDIR/mira/lib/$subdir/build"
-        make clean
-        make
-    done
-    cd "$SRCDIR/mira/build"
+    test -f "$SRCDIR/mira/install.cfg" || config_mira
+    cd "$SRCDIR/mira"
     make clean
     make
 }
 
 install_mira() {
-    local subdir
-    test -f "$SRCDIR/mira/build/Makefile" || build_mira
-    for subdir in ipy ylib yoifits
-    do
-        cd "$SRCDIR/mira/lib/$subdir/build"
-        make install
-    done
+    test -f "$SRCDIR/mira/install.cfg" || config_mira
     cd "$SRCDIR/mira/build"
     make install
 }
