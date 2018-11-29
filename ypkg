@@ -315,7 +315,7 @@ ypkg_update() {
     while test $# -gt 0
     do
         pkg="$1"
-        ypkg_clone $pkg
+        test -d "$SRCDIR/$pkg" || die "Package $pkg has no local repository"
         func=update_$(ypkg_lowercase $pkg)
         if type $func >/dev/null 2>/dev/null
         then
@@ -450,24 +450,6 @@ ypkg_reinstall() {
         shift
     done
 }
-
-#ypkg_upgrade() {
-#    local pkg status
-#    while test $# -gt 0
-#    do
-#        pkg="$1"
-#        shift
-#        status=$(ypkg_status $pkg)
-#        case "$status" in
-#            upgradable )
-#                config_$pkg
-#                build_$pkg
-#                install_$pkg
-#                ypkg_register $pkg
-#                ;;
-#        esac
-#    done
-#}
 
 ypkg_register() {
     local pkg status hash
@@ -1208,6 +1190,44 @@ ypkg_command_update() {
     fi
 }
 
+#
+# Implements: ypkg upgrade [--] [PKG ...]
+#
+# Upgrade all installed packages of update and upgrade the specified package(s)
+# PKG ...
+#
+ypkg_command_upgrade() {
+    local opt pkg sfx status
+    opt="yes"
+    while test $# -gt 0 -a "$opt" = yes
+    do
+        case "$1" in
+            -- ) opt="no";;
+            -* ) die "Invalid option \"$1\"";;
+            *  ) break;;
+        esac
+        shift
+    done
+    if test $# -eq 0
+    then
+        # Re-install upgradable pakages.
+        for pkg in $PACKAGES
+        do
+            status=$(ypkg_status $pkg)
+            test "$status" = "upgradable" && ypkg_install $pkg
+        done
+    else
+        # Idem but update package repository first.
+        for pkg in "$@"
+        do
+            ypkg_update $pkg
+            status=$(ypkg_status $pkg)
+            test "$status" = "upgradable" && ypkg_install $pkg
+        done
+    fi
+}
+
+#
 # Implements: ypkg config [--] PKG [...]
 #
 # Configure packages.
@@ -1325,15 +1345,17 @@ Manage Yorick packages.  The following high level commands are available:
         "config", "build" and "install" whatever the current package status.
 
     update [--] [PKG ...]
-        Update local repositories of packages.  If no packages are
-        specified, all local repositories are updated.  If the local
-        repository of a specified package does not yet exist, the remote
-        repository is first cloned.
+        Update local repositories of packages to the master remote version.
+        If no packages are specified, all local repositories are updated.
+        If packages are specified, their local repositories must exist (that
+        is, they must have been previously installed or, at least, cloned).
 
     upgrade [--] [PKG ...]
         Upgrade packages.  If no packages are specified, all upgradable
-        packages are upgraded.  If the local repository of a specified
-        package does not yet exist, the remote repository is first cloned.
+        packages (the ones which are currently installed but whose local
+        repository has changed) are re-built and re-installed.  For each
+        specified package, the local repository is updated, then the package
+        is re-built and re-installed if the local repository has changed.
 
 
 Low-level commands:

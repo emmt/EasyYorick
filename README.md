@@ -143,15 +143,18 @@ The following high level commands are available:
 
 - `ypkg update [--] [PKG ...]`
 
-  Update local repositories of packages.  If no packages are specified, all
-  local repositories are updated.  If the local repository of a specified
-  package does not yet exist, the remote repository is first cloned.
+  Update local repositories of packages to the master remote version.  If no
+  packages are specified, all local repositories are updated.  If packages are
+  specified, their local repositories must exist (that is, they must have been
+  previously installed or, at least, cloned).
 
 - `ypkg upgrade [--] [PKG ...]`
 
-  Upgrade packages.  If no packages are specified, all upgradable packages are
-  upgraded.  If the local repository of a specified package does not yet exist,
-  the remote repository is first cloned.
+  Upgrade packages.  If no packages are specified, all upgradable packages (the
+  ones which are currently installed but whose local repository has changed)
+  are re-built and re-installed.  For each specified package, the local
+  repository is updated, then the package is re-built and re-installed if the
+  local repository has changed.
 
 
 Low-level commands are:
