@@ -896,6 +896,7 @@ clone_mira() {
 update_mira() {
     test -e "$SRCDIR/mira" || clone_mira
     cd "$SRCDIR/mira"
+    git pull
 }
 
 config_mira() {
