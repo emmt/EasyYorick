@@ -633,7 +633,7 @@ update_yorick_z() {
     clone_yorick_z
     cd "$SRCDIR/yorick-z"
     rm -f Makefile
-    git co Makefile
+    git checkout Makefile
     git pull
 }
 
@@ -642,7 +642,7 @@ config_yorick_z() {
     cd "$SRCDIR/yorick-z"
     ./configure --yorick="$YORICK_EXE" --no-avcodec
     mv -f Makefile Makefile.cfg
-    git co Makefile
+    git checkout Makefile
 }
 
 build_yorick_z() {
