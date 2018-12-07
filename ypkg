@@ -937,82 +937,12 @@ install_mira() {
 
 #______________________________________________________________________________
 #
-# Build and install YGSL.
-#
-# Dependencies:
-#
-#     sudo apt install libgsl
-#
-
-ypkg_define "ygsl" "https://github.com/emmt/ygsl.git"
-
-clone_ygsl() {
-    if ! test -d "$SRCDIR/ygsl"
-    then
-        cd "$SRCDIR"
-        git clone "$YGSL_ORIGIN" ygsl
-    fi
-}
-
-update_ygsl() {
-    clone_ygsl
-    cd "$SRCDIR/ygsl"
-    git pull
-}
-
-config_ygsl() {
-    clone_ygsl
-    mkdir -p "$SRCDIR/ygsl/build"
-    cd "$SRCDIR/ygsl/build"
-    ../configure --yorick="$YORICK_EXE"
-}
-
-build_ygsl() {
-    test -f "$SRCDIR/ygsl/build/Makefile" || config_ygsl
-    cd "$SRCDIR/ygsl/build"
-    make clean
-    make all
-}
-
-install_ygsl() {
-    test -f "$SRCDIR/ygsl/build/ygsl.so" || build_ygsl
-    cd "$SRCDIR/ygsl/build"
-    make install
-}
-
-#______________________________________________________________________________
-#
-
-ypkg_define "yfitsio" "https://github.com/emmt/YFITSIO.git"
-ypkg_define "yorxpa" "https://github.com/emmt/YorXPA.git"
-ypkg_define "ylib" "https://github.com/emmt/ylib.git"
-ypkg_define "ipy" "https://github.com/emmt/IPY.git"
-ypkg_define "yoifits" "https://github.com/emmt/YOIFITS.git"
-ypkg_define "yandor" "https://github.com/emmt/YAndor.git"
-ypkg_define "ydlwrap" "https://github.com/emmt/YDLWrap.git"
-ypkg_define "ylapack" "https://github.com/emmt/YLapack.git"
-ypkg_define "ytotvar" "https://github.com/emmt/YTotVar.git"
-ypkg_define "yimage" "https://github.com/emmt/YImage.git"
-ypkg_define "yusb" "https://github.com/emmt/yusb.git"
-ypkg_define "ysox" "https://github.com/emmt/YSoX.git"
-ypkg_define "yunix" "https://github.com/emmt/YUnix.git"
-
-config_ydlwrap() {
-    mkdir -p "$SRCDIR/ydlwrap/build"
-    cd "$SRCDIR/ydlwrap/build"
-    ../configure --yorick="$YORICK_EXE" \
-                 --cflags='-DHAVE_FFCALL -DHAVE_LIBTOOL' \
-                 --deplibs='-lavcall -lltdl -ldl'
-}
-
-#______________________________________________________________________________
-#
 # LOAD SCRIPTS
 #
 
 if test -d "$SCRIPTDIR"
 then
-    for file in "$SCRIPTDIR"/*
+    for file in "$SCRIPTDIR"/*.sh
     do
         . "$file"
     done

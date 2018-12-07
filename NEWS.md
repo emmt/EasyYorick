@@ -1,3 +1,3 @@
 - Put manifest file in, *e.g.*, `$PREFIX/etc/ypkg/manifest`.
-
 - Add colors when list/check packages.
+- Customization scripts in `$PREFIX/etc/ypkg/scripts.d`.
