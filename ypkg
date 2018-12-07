@@ -130,7 +130,7 @@ ypkg_define() {
     test $# -eq 2 || die "ypkg_define: expecting exactly 2 argments"
     pkg="$1"
     url="$2"
-    eval `ypkg_uppercase "$pkg"`_GIT=\$url
+    eval `ypkg_uppercase "$pkg"`_ORIGIN=\$url
     PACKAGES="$PACKAGES $pkg"
 }
 
@@ -140,7 +140,7 @@ ypkg_assert_available() {
     while test $# -gt 0
     do
         pkg="$1"
-        eval url=\$`ypkg_uppercase $pkg`_GIT
+        eval url=\$`ypkg_uppercase $pkg`_ORIGIN
         test -z "$url" && die "Unknown package \"$pkg\""
         shift
     done
@@ -202,7 +202,7 @@ ypkg_status() {
     local pkg url hash count oldhash line status
     test $# -eq 1 || die "Usage: ypkg_status PKG"
     pkg="$1"
-    eval url=\$`ypkg_uppercase $pkg`_GIT
+    eval url=\$`ypkg_uppercase $pkg`_ORIGIN
     if test -z "$url"
     then
         echo "unknown"
@@ -254,7 +254,7 @@ ypkg_status() {
 ypkg_origin() {
     local url
     test $# -eq 1 || die "ypkg_origin: expecting exactly 1 argument"
-    eval url=\$`ypkg_uppercase "$1"`_GIT
+    eval url=\$`ypkg_uppercase "$1"`_ORIGIN
     test -z "$url" && die "Unknown package \"$1\""
     echo "$url"
 }
@@ -512,7 +512,7 @@ clone_ypkg() {
     if ! test -d "$SRCDIR/ypkg"
     then
         cd "$SRCDIR"
-        git clone "$YPKG_GIT" ypkg
+        git clone "$YPKG_ORIGIN" ypkg
     fi
 }
 
@@ -550,7 +550,7 @@ clone_yorick() {
     if ! test -d "$SRCDIR/yorick"
     then
         cd "$SRCDIR"
-        git clone "$YORICK_GIT" yorick
+        git clone "$YORICK_ORIGIN" yorick
     fi
 }
 
@@ -631,7 +631,7 @@ clone_yorick_z() {
     if ! test -d "$SRCDIR/yorick-z"
     then
         cd "$SRCDIR"
-        git clone "$YORICK_Z_GIT" yorick-z
+        git clone "$YORICK_Z_ORIGIN" yorick-z
     fi
 }
 
@@ -678,7 +678,7 @@ clone_yeti() {
     if ! test -d "$SRCDIR/yeti"
     then
         cd "$SRCDIR"
-        git clone "$YETI_GIT" yeti
+        git clone "$YETI_ORIGIN" yeti
     fi
 }
 
@@ -716,7 +716,7 @@ clone_optimpacklegacy() {
     if ! test -d "$SRCDIR/optimpacklegacy"
     then
         cd "$SRCDIR"
-        git clone "$OPTIMPACKLEGACY_GIT" optimpacklegacy
+        git clone "$OPTIMPACKLEGACY_ORIGIN" optimpacklegacy
     fi
 }
 
@@ -763,7 +763,7 @@ clone_optimpack() {
     if ! test -d "$SRCDIR/optimpack"
     then
         cd "$SRCDIR"
-        git clone "$OPTIMPACK_GIT" optimpack
+        git clone "$OPTIMPACK_ORIGIN" optimpack
     fi
 }
 
@@ -809,7 +809,7 @@ clone_xfft() {
     if ! test -d "$SRCDIR/xfft"
     then
         cd "$SRCDIR"
-        git clone "$XFFT_GIT" xfft
+        git clone "$XFFT_ORIGIN" xfft
     fi
 }
 
@@ -854,7 +854,7 @@ clone_ynfft() {
     if ! test -d "$SRCDIR/ynfft"
     then
         cd "$SRCDIR"
-        git clone "$YNFFT_GIT" ynfft
+        git clone "$YNFFT_ORIGIN" ynfft
     fi
 }
 
@@ -898,7 +898,7 @@ clone_mira() {
     if ! test -d "$SRCDIR/mira"
     then
         cd "$SRCDIR"
-        git clone "$MIRA_GIT" mira
+        git clone "$MIRA_ORIGIN" mira
     fi
 }
 
@@ -950,7 +950,7 @@ clone_ygsl() {
     if ! test -d "$SRCDIR/ygsl"
     then
         cd "$SRCDIR"
-        git clone "$YGSL_GIT" ygsl
+        git clone "$YGSL_ORIGIN" ygsl
     fi
 }
 

@@ -12,7 +12,7 @@
    must be called to add the package to the list of available packages and to
    define a global variable with the URL of the original GIT repository.  The
    name of this variable is the package name converted to uppercase letters
-   and dashes converted to underscores followed by `_GIT`.
+   and dashes converted to underscores followed by `_ORIGIN`.
 
 3. The directory where is the local repository of a package is `$SRCDIR/$pkg`
    where `$SRCDIR` is defined by the global configuration and `$pkg` is the
