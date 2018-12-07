@@ -24,6 +24,7 @@ install:
 	mkdir -p "${PREFIX}/etc/ypkg"
 	touch "${PREFIX}/etc/ypkg/MANIFEST"
 	mkdir -p "${PREFIX}/etc/ypkg/scripts.d"
+	touch "${PREFIX}/etc/ypkg/scripts.d/00init.sh"
 	test -d "${srcdir}/scripts.d" && \
 	    (cd "${srcdir}/scripts.d" ; \
 	     for src in *.sh; do \
