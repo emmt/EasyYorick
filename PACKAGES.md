@@ -16,7 +16,11 @@
 
 3. The directory where is the local repository of a package is `$SRCDIR/$pkg`
    where `$SRCDIR` is defined by the global configuration and `$pkg` is the
-   package name.
+   package name.  The values of the global variables are listed by:
+
+   ```sh
+   ypkg variables
+   ```
 
 4. For each supported package, a number of functions can be defined:
 
@@ -80,6 +84,13 @@ recommended to have names starting by a two digit number between `01` and `98`.
 Scripts named `00...` will be sourced first and are reserved for
 pre-initialization of `ypkg` while scripts named `99...` will be sourced last
 and are reserved for post-initialization.
+
+The values of the global variables, like `$SCRIPTDIR` which can be used
+in customization scripts are listed by the command:
+
+```sh
+ypkg variables
+```
 
 
 ## Customize a known package
