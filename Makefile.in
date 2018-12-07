@@ -23,4 +23,10 @@ install:
 	chmod 755 "${PREFIX}/bin/ypkg"
 	mkdir -p "${PREFIX}/etc/ypkg"
 	touch "${PREFIX}/etc/ypkg/MANIFEST"
+	mkdir -p "${PREFIX}/etc/ypkg/scripts.d"
+	test -d "${srcdir}/scripts.d" && \
+	    (cd "${srcdir}/scripts.d" ; \
+	     for src in *.sh; do \
+	         cp -a "$${src}" "${PREFIX}/etc/ypkg/scripts.d/."; \
+	     done)
 	mkdir -p "${PREFIX}/src"

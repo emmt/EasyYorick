@@ -44,6 +44,7 @@ PACKAGES=""
 # In principle, the following does not need changes.  But you can
 # have a look to see what will happen if you run this script.
 CONFIGDIR="$PREFIX/etc/ypkg"
+SCRIPTDIR="$CONFIGDIR/scripts.d"
 LIBDIR="$PREFIX/lib"
 LIBEXECDIR="$PREFIX/libexec"
 BINDIR="$PREFIX/bin"
@@ -98,6 +99,14 @@ test -d "$PREFIX" -a -r "$PREFIX" -a -w "$PREFIX" || \
 test -e "$SRCDIR" || mkdir -p "$SRCDIR"
 test -d "$SRCDIR" -a -r "$SRCDIR" -a -w "$SRCDIR" || \
     die "Not a regular readable and writable directory \"$SRCDIR\""
+
+test -e "$CONFIGDIR" || mkdir -p "$CONFIGDIR"
+test -d "$CONFIGDIR" -a -r "$CONFIGDIR" -a -w "$CONFIGDIR" || \
+    die "Not a regular readable and writable directory \"$CONFIGDIR\""
+
+test -e "$SCRIPTDIR" || mkdir -p "$SCRIPTDIR"
+test -d "$SCRIPTDIR" -a -r "$SCRIPTDIR" -a -w "$SCRIPTDIR" || \
+    die "Not a regular readable and writable directory \"$SCRIPTDIR\""
 
 test -e "$MANIFEST" || touch "$MANIFEST"
 test -f "$MANIFEST" -a -r "$MANIFEST" -a -w "$MANIFEST" || \
@@ -995,6 +1004,19 @@ config_ydlwrap() {
                  --cflags='-DHAVE_FFCALL -DHAVE_LIBTOOL' \
                  --deplibs='-lavcall -lltdl -ldl'
 }
+
+#______________________________________________________________________________
+#
+# LOAD SCRIPTS
+#
+
+if test -d "$SCRIPTDIR"
+then
+    for file in "$SCRIPTDIR"/*
+    do
+        . "$file"
+    done
+fi
 
 #______________________________________________________________________________
 #
