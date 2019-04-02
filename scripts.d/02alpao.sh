@@ -24,7 +24,7 @@ update_yalpao() {
 }
 
 config_yalpao() {
-    local cflags, deplibs
+    local cflags deplibs
     clone_yalpao
     mkdir -p "$SRCDIR/yalpao/build"
     cd "$SRCDIR/yalpao/build"
