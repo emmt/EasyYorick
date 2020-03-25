@@ -1,6 +1,6 @@
-#______________________________________________________________________________
 #
-# Build and install YGSL.
+# Build and install scripts for YGSL a Yorick plug-in for the GNU Scientific
+# Library.
 #
 # Dependencies:
 #
