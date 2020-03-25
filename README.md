@@ -196,9 +196,9 @@ Low-level commands are:
 
 EasyYorick has a simple plug-in system to extend its knowledge database to
 other packages than the ones included in the repository.  Adding a new package
-is easy: just add a script in the `scrips.d` directory created in
+is easy: just add a script in the `scripts.d` directory created in
 `$PREFIX/etc/ypkg` during installation.  You can start with an existing script
-such as [`scrips.d/01ygsl.sh`](./scrips.d/01ygsl.sh) which is to install a
+such as [`scripts.d/01ygsl.sh`](./scrips.d/01ygsl.sh) which is to install a
 Yorick plug-in for the *GNU Scientific Library* (GSL).  The [`ypkg`](./ypkg)
 script itself can be a source of inspiration.  The scripts in this directory
 are sourced by `ypkg` in the lexicographic order of their names.
