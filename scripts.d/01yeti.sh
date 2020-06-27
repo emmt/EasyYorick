@@ -19,8 +19,9 @@ update_yeti() {
 }
 
 config_yeti() {
-    cd "$SRCDIR/yeti"
-    ./configure --yorick="$YORICK_EXE"
+    mkdir -p "$SRCDIR/yeti/build"
+    cd "$SRCDIR/yeti/build"
+    ../configure --yorick="$YORICK_EXE"
 }
 
 build_yeti() {
