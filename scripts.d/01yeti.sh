@@ -25,12 +25,12 @@ config_yeti() {
 }
 
 build_yeti() {
-    cd "$SRCDIR/yeti"
+    cd "$SRCDIR/yeti/build"
     make clean
     make -j4 all
 }
 
 install_yeti() {
-    cd "$SRCDIR/yeti"
+    cd "$SRCDIR/yeti/build"
     make install
 }
