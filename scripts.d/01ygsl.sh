@@ -24,7 +24,6 @@ update_ygsl() {
 }
 
 config_ygsl() {
-    clone_ygsl
     mkdir -p "$SRCDIR/ygsl/build"
     cd "$SRCDIR/ygsl/build"
     ../configure --yorick="$YORICK_EXE"
