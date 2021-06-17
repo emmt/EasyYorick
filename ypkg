@@ -326,6 +326,7 @@ ypkg_update() {
     do
         pkg="$1"
         test -d "$SRCDIR/$pkg" || die "Package $pkg has no local repository"
+        echo -n "$pkg: "
         func=update_$(ypkg_lowercase $pkg)
         if type $func >/dev/null 2>/dev/null
         then
