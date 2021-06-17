@@ -127,7 +127,7 @@ ypkg_uppercase() {
 # Define a new available package.
 ypkg_define() {
     local pkg url
-    test $# -eq 2 || die "ypkg_define: expecting exactly 2 argments"
+    test $# -eq 2 || die "usage: ypkg_define PKG URL"
     pkg="$1"
     url="$2"
     eval `ypkg_uppercase "$pkg"`_ORIGIN=\$url
@@ -139,9 +139,7 @@ ypkg_assert_available() {
     local pkg url
     while test $# -gt 0
     do
-        pkg="$1"
-        eval url=\$`ypkg_uppercase $pkg`_ORIGIN
-        test -z "$url" && die "Unknown package \"$pkg\""
+        ypkg_origin "$1"
         shift
     done
 }
@@ -202,7 +200,7 @@ ypkg_status() {
     local pkg url hash count oldhash line status
     test $# -eq 1 || die "Usage: ypkg_status PKG"
     pkg="$1"
-    eval url=\$`ypkg_uppercase $pkg`_ORIGIN
+    eval url=$(ypkg_origin -n $pkg)
     if test -z "$url"
     then
         echo "unknown"
@@ -247,15 +245,21 @@ ypkg_status() {
     echo "cloned"
 }
 
-# Usage: ypkg_origin PKG
+# Usage: ypkg_origin [-n] PKG
 #
 # Yields the GIT URL of package PKG.
+# Do not check validity if `-n` flag is specified.
 #
 ypkg_origin() {
-    local url
-    test $# -eq 1 || die "ypkg_origin: expecting exactly 1 argument"
+    local url chk
+    chk="yes"
+    if test $# -eq 2 -a "$1" = "-n"; then
+        chk="no"
+        shift
+    fi
+    test $# -eq 1 || die "usage: ypkg_origin [-n] PKG"
     eval url=\$`ypkg_uppercase "$1"`_ORIGIN
-    test -z "$url" && die "Unknown package \"$1\""
+    test "$chk" = "yes" -a -z "$url" && die "Unknown package \"$1\""
     echo "$url"
 }
 
@@ -265,23 +269,20 @@ ypkg_origin() {
 # result is returned if there is no valid local GIT repository for package PKG.
 #
 ypkg_hash() {
-    local hash dir
-    if test $# -eq 1
-    then
-        set +o errexit # Temporarily ignore unchecked errors.
-        dir=$(pwd)
-        if test $? -eq 0
-        then
-            cd "$SRCDIR/$1" 2>/dev/null
-            if test $? -eq 0
-            then
-                hash=$(git rev-parse HEAD 2>/dev/null | tr 'A-F' 'a-f')
-                test $? -eq 0 && echo "$hash"
-                cd "$dir"
-            fi
+    local hash dir pkg
+    test $# -eq 1 || die "usage: ypkg_hash PKG"
+    pkg="$1"
+    set +o errexit # Temporarily ignore unchecked errors.
+    dir=$(pwd)
+    if test $? -eq 0; then
+        cd "$SRCDIR/$pkg" 2>/dev/null
+        if test $? -eq 0; then
+            hash=$(git rev-parse HEAD 2>/dev/null | tr 'A-F' 'a-f')
+            test $? -eq 0 && echo "$hash"
+            cd "$dir"
         fi
-        set -o errexit # Restore safe behavior for unchecked errors.
     fi
+    set -o errexit # Restore safe behavior for unchecked errors.
 }
 
 # Usage: ypkg_clone [PKG ...]
