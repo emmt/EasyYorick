@@ -15,7 +15,7 @@ clone_yor_vops() {
     if ! test -d "$SRCDIR/yor-vops"
     then
         cd "$SRCDIR"
-        git clone "$VOPS_ORIGIN" vops
+        git clone "$VOPS_ORIGIN" yor-vops
     fi
 }
 
