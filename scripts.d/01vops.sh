@@ -1,5 +1,5 @@
 #
-# Build and install scripts for VOPS.
+# Build and install scripts for YOR-VOPS.
 #
 
 ypkg_define "yor-vops" "https://github.com/emmt/yor-vops.git"
@@ -15,14 +15,14 @@ clone_yor_vops() {
     if ! test -d "$SRCDIR/yor-vops"
     then
         cd "$SRCDIR"
-        git clone "$VOPS_ORIGIN" yor-vops
+        git clone "$YOR_VOPS_ORIGIN" yor-vops
     fi
 }
 
 update_yor_vops() {
     clone_yor_vops
     cd "$SRCDIR/yor-vops"
-    git pull
+    git pull --rebase --autostash
 }
 
 config_yor_vops() {
