@@ -61,16 +61,17 @@ YPKG_USE_COLORS="yes"
 
 if test "$YPKG_USE_COLORS" = "yes"
 then
-    # '\e' is escape char for `printf` ('\x1b' for `/bin/echo -e`)
-    YPKG_BLACK='\e[30m'
-    YPKG_RED='\e[31m'
-    YPKG_GREEN='\e[32m'
-    YPKG_YELLOW='\e[33m'
-    YPKG_BLUE='\e[34m'
-    YPKG_MAGENTA='\e[35m'
-    YPKG_CYAN='\e[36m'
-    YPKG_WHITE='\e[37m'
-    YPKG_RESET='\e[0m'
+    # '\e' is escape char for recent versions of `printf`, `\033` for older
+    # versions of `printf`, and '\x1b' for `/bin/echo -e`.
+    YPKG_BLACK='\033[30m'
+    YPKG_RED='\033[31m'
+    YPKG_GREEN='\033[32m'
+    YPKG_YELLOW='\033[33m'
+    YPKG_BLUE='\033[34m'
+    YPKG_MAGENTA='\033[35m'
+    YPKG_CYAN='\033[36m'
+    YPKG_WHITE='\033[37m'
+    YPKG_RESET='\033[0m'
 else
     YPKG_BLACK=
     YPKG_RED=
