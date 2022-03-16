@@ -93,6 +93,21 @@ ypkg_warn() {
     printf >&2 "${YPKG_YELLOW}WARNING: %s${YPKG_RESET}\n" "$*"
 }
 
+# `ypkg_find_executable EXE` find executable EXE in $PATH.  Return ""
+# if not found.
+ypkg_find_executable() {
+    local dir exe="$1" result="" old_IFS="$IFS"
+    IFS=":"
+    for dir in $PATH; do
+        if test -x "$dir/$exe"; then
+            result="$dir/$exe"
+            break
+        fi
+    done
+    IFS="$old_IFS"
+    echo "$result"
+}
+
 test -e "$PREFIX" || mkdir -p "$PREFIX"
 test -d "$PREFIX" -a -r "$PREFIX" -a -w "$PREFIX" || \
     die "Not a regular readable and writable directory \"$PREFIX\""
@@ -601,7 +616,10 @@ install_yorick() {
     find relocate -type f -exec chmod ugo+r {} \;
     mkdir -p relocate/emacs
     cp -p emacs/README emacs/*.el relocate/emacs/.
-    emacs --batch relocate/emacs/yorick.el -f emacs-lisp-byte-compile
+    emacs=$(ypkg_find_executable "emacs")
+    if test ! -z "$emacs"; then
+        $emacs --batch relocate/emacs/yorick.el -f emacs-lisp-byte-compile
+    fi
     mkdir -p "$LIBEXECDIR"
     if test "$PRESERVE_OTHER_INSTALLED_FILES" = "yes"
     then
