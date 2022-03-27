@@ -24,7 +24,7 @@ update_yorick_z() {
     cd "$SRCDIR/yorick-z"
     rm -f Makefile
     git checkout Makefile
-    git pull
+    git pull -r
 }
 
 config_yorick_z() {

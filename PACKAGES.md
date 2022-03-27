@@ -47,7 +47,7 @@
 
    update_$pkg() {
        cd "$SRCDIR/$pkg"
-       git pull
+       git pull -r
    }
 
    config_$pkg() {

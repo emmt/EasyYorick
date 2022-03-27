@@ -19,7 +19,7 @@ clone_mira() {
 update_mira() {
     test -e "$SRCDIR/mira" || clone_mira
     cd "$SRCDIR/mira"
-    git pull
+    git pull -r
 }
 
 config_mira() {

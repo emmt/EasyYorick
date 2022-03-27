@@ -351,7 +351,7 @@ ypkg_update() {
         else
             # Apply fallback.
             cd "$SRCDIR/$pkg"
-            git pull
+            git pull -r
         fi
         shift
     done
@@ -537,7 +537,7 @@ clone_ypkg() {
 update_ypkg() {
     test -e "$SRCDIR/ypkg" || clone_ypkg
     cd "$SRCDIR/ypkg"
-    git pull
+    git pull -r
 }
 
 config_ypkg() {
@@ -575,7 +575,7 @@ clone_yorick() {
 update_yorick() {
     clone_yorick
     cd "$SRCDIR/yorick"
-    git pull
+    git pull -r
 }
 
 config_yorick() {

@@ -15,7 +15,7 @@ clone_xfft() {
 update_xfft() {
     clone_xfft
     cd "$SRCDIR/xfft"
-    git pull
+    git pull -r
 }
 
 config_xfft() {

@@ -16,7 +16,7 @@ clone_optimpacklegacy() {
 update_optimpacklegacy() {
     clone_optimpacklegacy
     cd "$SRCDIR/optimpacklegacy"
-    git pull
+    git pull -r
 }
 
 config_optimpacklegacy() {

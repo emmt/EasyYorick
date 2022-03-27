@@ -20,7 +20,7 @@ clone_yalpao() {
 update_yalpao() {
     clone_yalpao
     cd "$SRCDIR/yalpao"
-    git pull
+    git pull -r
 }
 
 config_yalpao() {

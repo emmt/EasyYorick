@@ -16,7 +16,7 @@ clone_optimpack() {
 update_optimpack() {
     clone_optimpack
     cd "$SRCDIR/optimpack"
-    git pull
+    git pull -r
 }
 
 config_optimpack() {

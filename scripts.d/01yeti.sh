@@ -15,7 +15,7 @@ clone_yeti() {
 update_yeti() {
     clone_yeti
     cd "$SRCDIR/yeti"
-    git pull
+    git pull -r
 }
 
 config_yeti() {

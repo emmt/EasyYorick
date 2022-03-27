@@ -20,7 +20,7 @@ clone_ygsl() {
 update_ygsl() {
     clone_ygsl
     cd "$SRCDIR/ygsl"
-    git pull
+    git pull -r
 }
 
 config_ygsl() {

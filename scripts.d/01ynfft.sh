@@ -20,7 +20,7 @@ clone_ynfft() {
 update_ynfft() {
     clone_ynfft
     cd "$SRCDIR/ynfft"
-    git pull
+    git pull -r
 }
 
 config_ynfft() {
