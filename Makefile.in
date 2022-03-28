@@ -9,6 +9,9 @@ CC=gcc
 CFLAGS='-pipe -Wall -O2 -fomit-frame-pointer'
 LDFLAGS=''
 
+# Yorick branch to install.
+YORICK_BRANCH=master
+
 default:
 	@echo "No default target.  Try 'make install'."
 
@@ -19,7 +22,8 @@ install:
 	    -e 's%^( *(export  *)?PREFIX=).*%\1"${PREFIX}"%' \
 	    -e 's%^( *(export  *)?CC=).*%\1"${CC}"%' \
 	    -e 's%^( *(export  *)?CFLAGS=).*%\1"${CFLAGS}"%' \
-	    -e 's%^( *(export  *)?LDFLAGS=).*%\1"${LDFLAGS}"%'
+	    -e 's%^( *(export  *)?LDFLAGS=).*%\1"${LDFLAGS}"%' \
+	    -e 's%^( *(export  *)?YORICK_BRANCH=).*%\1"${YORICK_BRANCH}"%'
 	chmod 755 "${PREFIX}/bin/ypkg"
 	mkdir -p "${PREFIX}/etc/ypkg"
 	touch "${PREFIX}/etc/ypkg/MANIFEST"

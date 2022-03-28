@@ -19,6 +19,7 @@ cfg_prefix="$HOME/easy-yorick"
 cfg_cc="gcc"
 cfg_cflags="-pipe -Wall -O2 -fomit-frame-pointer"
 cfg_ldflags=""
+cfg_yorick_branch="emmt"
 
 # # The other values are pretty general.
 # cfg_tmpdir=.
@@ -79,6 +80,9 @@ options:
   --cc=CC              C compiler [$cfg_cc].
   --cflags=CFLAGS      Compiler flags [$cfg_cflags].
   --ldflags=LDFLAGS    Additional linker flags [$cfg_ldflags].
+  --branch=NAME        Branch of Yorick to use [$cfg_yorick_branch], one of:
+                        - "master" (https://github.com/LLNL/yorick.git);
+                        - "emmt" (https://github.com/emmt/yorick.git).
   -h, --help           Print this help and exit.
 EOF
 }
@@ -104,6 +108,9 @@ do
         --ldflags=* )
             cfg_ldflags=$(cfg_opt_value "$cfg_arg")
             ;;
+        --branch=* )
+            cfg_yorick_branch=$(cfg_opt_value "$cfg_arg")
+            ;;
         * )
             cfg_die "Unknown option \"$cfg_arg\""
     esac
@@ -118,13 +125,13 @@ esac
 # Create the Makefile.
 cfg_dst="./Makefile"
 cfg_src="$cfg_srcdir/Makefile.in"
-
 cfg_filter=""
-cfg_add_rule "PREFIX"  "$cfg_prefix"
-cfg_add_rule "CC"      "$cfg_cc"
-cfg_add_rule "CFLAGS"  "$cfg_cflags"
-cfg_add_rule "LDFLAGS" "$cfg_ldflags"
-cfg_add_rule "srcdir"  "$cfg_srcdir"
+cfg_add_rule "PREFIX"         "$cfg_prefix"
+cfg_add_rule "CC"             "$cfg_cc"
+cfg_add_rule "CFLAGS"         "$cfg_cflags"
+cfg_add_rule "LDFLAGS"        "$cfg_ldflags"
+cfg_add_rule "srcdir"         "$cfg_srcdir"
+cfg_add_rule "YORICK_BRANCH"  "$cfg_yorick_branch"
 sed < "$cfg_src" > "$cfg_dst" -e "$cfg_filter"
 
 echo "Makefile has been created."
