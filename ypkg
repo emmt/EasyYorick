@@ -562,7 +562,8 @@ install_ypkg() {
 # Settings for Yorick.
 #
 
-ypkg_define "yorick" "https://github.com/dhmunro/yorick.git"
+#ypkg_define "yorick" "https://github.com/LLNL/yorick.git"
+ypkg_define "yorick" "https://github.com/emmt/yorick.git"
 
 clone_yorick() {
     if ! test -d "$SRCDIR/yorick"
@@ -575,12 +576,14 @@ clone_yorick() {
 update_yorick() {
     clone_yorick
     cd "$SRCDIR/yorick"
+    git checkout emmt
     git pull -r
 }
 
 config_yorick() {
     clone_yorick
     cd "$SRCDIR/yorick"
+    git checkout emmt
     make Y_HOME=relocate ysite "CFLAGS=$CFLAGS" "CC=$CC"
     make config "CFLAGS=$CFLAGS" "CC=$CC"
 }
@@ -588,6 +591,7 @@ config_yorick() {
 build_yorick() {
     test -f "$SRCDIR/yorick/Make.cfg" || config_yorick
     cd "$SRCDIR/yorick"
+    git checkout emmt
     make clean
     make -j4
 }
@@ -595,6 +599,7 @@ build_yorick() {
 install_yorick() {
     test -x "$SRCDIR/yorick/yorick/yorick" || build_yorick
     cd "$SRCDIR/yorick"
+    git checkout emmt
     make install
     cp -p install.rel relocate/README
     cp -p play/libplay.* relocate/lib/.
