@@ -1,7 +1,7 @@
 # Easy Yorick
 
 This repository provides a script ([ypkg](./ypkg)) to install
-[Yorick](https://github.com/dhmunro/yorick) and and some extensions (among
+[Yorick](https://github.com/LLNL/yorick) and and some extensions (among
 others [MiRA](https://github.com/emmt/MiRA)).
 
 

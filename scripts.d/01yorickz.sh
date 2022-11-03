@@ -6,7 +6,7 @@
 #     sudo apt install zlib1g-dev libpng-dev libjpeg-dev
 #
 
-ypkg_define "yorick-z" "https://github.com/dhmunro/yorick-z.git"
+ypkg_define "yorick-z" "https://github.com/LLNL/yorick-z.git"
 
 clone_yorick_z() {
     if ! test -d "$SRCDIR/yorick-z"
