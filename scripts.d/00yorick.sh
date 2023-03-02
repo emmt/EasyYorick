@@ -4,12 +4,11 @@
 
 if test "$YORICK_BRANCH" = "emmt"; then
     ypkg_define "yorick" "https://github.com/emmt/yorick.git"
-else
-    if test "$YORICK_BRANCH" != "master"; then
-        ypkg_warn "variable YORICK_BRANCH should be \"master\" or \"emmt\""
-        YORICK_BRANCH="master"
-    fi
+elif test "$YORICK_BRANCH" = "master"; then
     ypkg_define "yorick" "https://github.com/LLNL/yorick.git"
+else
+    ypkg_warn "variable YORICK_BRANCH should be \"master\" or \"emmt\""
+    YORICK_BRANCH="master"
 fi
 
 clone_yorick() {
