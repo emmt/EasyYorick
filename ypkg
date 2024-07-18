@@ -57,7 +57,7 @@ export CC=gcc
 export CFLAGS='-pipe -Wall -O2 -fomit-frame-pointer'
 export LDFLAGS=''
 
-YORICK_BRANCH='master'
+YORICK_BRANCH='emmt'
 
 YPKG_USE_COLORS="yes"
 

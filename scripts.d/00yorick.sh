@@ -30,8 +30,8 @@ config_yorick() {
     clone_yorick
     cd "$SRCDIR/yorick"
     git checkout "$YORICK_BRANCH"
-    make Y_HOME=relocate ysite "CFLAGS=$CFLAGS" "CC=$CC"
-    make config "CFLAGS=$CFLAGS" "CC=$CC"
+    make Y_HOME=relocate ysite
+    make config CFLAGS="$CFLAGS" CC="$CC"
 }
 
 build_yorick() {
