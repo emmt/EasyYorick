@@ -95,14 +95,15 @@ ypkg_warn() {
     printf >&2 "${YPKG_YELLOW}WARNING: %s${YPKG_RESET}\n" "$*"
 }
 
-# `ypkg_find_executable EXE` find executable EXE in $PATH.  Return ""
-# if not found.
+# `ypkg_find_executable EXE` find executable EXE in $PATH. Return "" if not
+# found.
 ypkg_find_executable() {
-    local dir exe="$1" result="" old_IFS="$IFS"
+    local dir file exe="$1" result="" old_IFS="$IFS"
     IFS=":"
     for dir in $PATH; do
-        if test -x "$dir/$exe"; then
-            result="$dir/$exe"
+        file="$dir/$exe"
+        if test -x "$file" -a ! -d "$file"; then
+            result="$file"
             break
         fi
     done
