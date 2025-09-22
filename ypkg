@@ -86,6 +86,14 @@ else
     YPKG_RESET=
 fi
 
+tmp=`mktemp`
+script="write,format=\"Y_HOME=%s\\\nY_SITE=%s\\\nY_LAUNCH=%s\\\n\",Y_HOME,Y_SITE,Y_LAUNCH;quit;"
+echo $script | yorick > "$tmp"
+Y_HOME="$(sed <"$tmp" -e '/^Y_HOME=/!d;s/^Y_HOME=//')"
+Y_SITE="$(sed <"$tmp"  -e '/^Y_SITE=/!d;s/^Y_SITE=//')"
+Y_LAUNCH="$(sed <"$tmp" -e '/^Y_LAUNCH=/!d;s/^Y_LAUNCH=//')"
+rm -f "$tmp"
+
 die() {
     printf >&2 "${YPKG_RED}%s${YPKG_RESET}\n" "$*"
     exit 1
@@ -900,6 +908,15 @@ MANDIR=$MANDIR
 
 # Path to Yorick executable.
 YORICK_EXE=$YORICK_EXE
+
+# Yorick's "site directory" (platform independent).
+Y_SITE=$Y_SITE
+
+# Yorick's "home directory" (platform dependent).
+Y_HOME=$Y_HOME
+
+# The directory containing the Yorick executable.
+Y_LAUNCH=$Y_LAUNCH
 
 # C compiler, compilation and link flags.
 CC=$CC
