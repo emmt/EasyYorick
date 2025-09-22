@@ -32,5 +32,5 @@ install_yak() {
     dir="$SRCDIR/yak/yorick"
     test -d "$dir" || build_yak
     cp -a "$dir/yak.i" "$Y_SITE/i0/yak.i"
-    cp -a "$dit/yak-start.i" "$Y_SITE/i-start/yak-start.i"
+    cp -a "$dir/yak-start.i" "$Y_SITE/i-start/yak-start.i"
 }
