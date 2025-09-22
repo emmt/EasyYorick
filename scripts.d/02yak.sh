@@ -8,7 +8,7 @@ clone_yak() {
     if ! test -d "$SRCDIR/yak"
     then
         cd "$SRCDIR"
-        git clone "$YGIT_ORIGIN" "yak"
+        git clone "$YAK_ORIGIN" "yak"
     fi
 }
 
