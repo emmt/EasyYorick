@@ -883,48 +883,48 @@ ypkg_command_variables() {
     test $# -eq 0 || die "Usage: ypkg variables [--]"
     cat <<EOF
 # Common installation directory.
-PREFIX=$PREFIX
+PREFIX="$PREFIX"
 
 # Where to install the sources.
-SRCDIR=$SRCDIR
+SRCDIR="$SRCDIR"
 
 # Directory for customization scripts.
-SCRIPTDIR=$SCRIPTDIR
+SCRIPTDIR="$SCRIPTDIR"
 
 # Directory for compiled libraries.
-LIBDIR=$LIBDIR
+LIBDIR="$LIBDIR"
 
 # Directory for compiled packages.
-LIBEXECDIR=$LIBEXECDIR
+LIBEXECDIR="$LIBEXECDIR"
 
 # Directory for executables.
-BINDIR=$BINDIR
+BINDIR="$BINDIR"
 
 # Directory for architure-independent files.
-SHAREDIR=$SHAREDIR
+SHAREDIR="$SHAREDIR"
 
 # Directory for manual pages.
-MANDIR=$MANDIR
+MANDIR="$MANDIR"
 
 # Path to Yorick executable.
-YORICK_EXE=$YORICK_EXE
+YORICK_EXE="$YORICK_EXE"
 
 # Yorick's "site directory" (platform independent).
-Y_SITE=$Y_SITE
+Y_SITE="$Y_SITE"
 
 # Yorick's "home directory" (platform dependent).
-Y_HOME=$Y_HOME
+Y_HOME="$Y_HOME"
 
 # The directory containing the Yorick executable.
-Y_LAUNCH=$Y_LAUNCH
+Y_LAUNCH="$Y_LAUNCH"
 
 # C compiler, compilation and link flags.
-CC=$CC
-CFLAGS=$CFLAGS
-LDFLAGS=$LDFLAGS
+CC="$CC"
+CFLAGS="$CFLAGS"
+LDFLAGS="$LDFLAGS"
 
 # Use color for messages.
-YPKG_USE_COLORS=$YPKG_USE_COLORS
+YPKG_USE_COLORS="$YPKG_USE_COLORS"
 EOF
 }
 
